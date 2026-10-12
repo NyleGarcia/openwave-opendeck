@@ -20,8 +20,8 @@
       "@semantic-release/github",
       {
         "assets": [
-          { "path": "dist/openwave-streamdeck-*.zip", "label": "OpenDeck plugin" },
-          { "path": "dist/openwave-streamdeck-*.zip.sha256", "label": "SHA-256 checksum" }
+          { "path": "dist/openwave-opendeck-*.zip", "label": "OpenDeck plugin" },
+          { "path": "dist/openwave-opendeck-*.zip.sha256", "label": "SHA-256 checksum" }
         ]
       }
     ],

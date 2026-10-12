@@ -209,21 +209,21 @@ handle — the firmware serves one process at a time.
 
 ### From a release
 
-1. Download `openwave-streamdeck-X.Y.Z.zip` from the
-   [latest release](https://github.com/NyleGarcia/openwave-streamdeck/releases/latest).
+1. Download `openwave-opendeck-X.Y.Z.zip` from the
+   [latest release](https://github.com/NyleGarcia/openwave-opendeck/releases/latest).
    Check it against the `.sha256` file next to it with `sha256sum -c`.
 2. Install it with OpenDeck's install-from-file option in the Plugins view, or
    by hand:
    ```sh
-   unzip openwave-streamdeck-*.zip -d ~/.config/opendeck/plugins/
+   unzip openwave-opendeck-*.zip -d ~/.config/opendeck/plugins/
    ```
 3. Restart OpenDeck and drag an action from **OpenWave** onto a key or dial.
 
 ### From source
 
 ```sh
-git clone https://github.com/NyleGarcia/openwave-streamdeck.git
-cd openwave-streamdeck
+git clone https://github.com/NyleGarcia/openwave-opendeck.git
+cd openwave-opendeck
 make install     # copies the bundle into ~/.config/opendeck/plugins
 ```
 
@@ -231,7 +231,7 @@ Then restart OpenDeck. It is a copy, not a symlink, so run `make install`
 again after each change. To build the archive OpenDeck's installer takes:
 
 ```sh
-make package     # dist/openwave-streamdeck-<version>.zip (+ .sha256)
+make package     # dist/openwave-opendeck-<version>.zip (+ .sha256)
 ```
 
 ### Uninstall

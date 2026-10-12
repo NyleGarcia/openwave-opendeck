@@ -33,7 +33,7 @@ def main():
     dist = os.path.join(ROOT, "dist")
     shutil.rmtree(dist, ignore_errors=True)
     os.makedirs(dist)
-    out = os.path.join(dist, f"openwave-streamdeck-{version}.zip")
+    out = os.path.join(dist, f"openwave-opendeck-{version}.zip")
 
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
         for directory, subdirectories, files in os.walk(

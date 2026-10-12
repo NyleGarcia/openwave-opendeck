@@ -1,5 +1,5 @@
 {
-  "name": "openwave-streamdeck",
+  "name": "openwave-opendeck",
   "version": "0.0.0",
   "private": true,
   "description": "Release tooling only. The plugin itself is Python and has no dependencies at all.",
