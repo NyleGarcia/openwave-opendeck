@@ -1,3 +1,15 @@
+# [1.0.0](https://github.com/NyleGarcia/openwave-opendeck/compare/v0.7.2...v1.0.0) (2026-10-12)
+
+
+* feat!: rename bundle ID to systems.garcia.openwave, author to NyleGarcia ([0f943e0](https://github.com/NyleGarcia/openwave-opendeck/commit/0f943e0309737e223abb9e1d8ed10a052a2ac7c9))
+
+
+### BREAKING CHANGES
+
+* the plugin directory and every action UUID change from
+dev.openwave.* to systems.garcia.openwave.*. OpenDeck treats this as a new plugin, so keys
+configured against the old actions need to be re-added after updating.
+
 ## [0.7.2](https://github.com/NyleGarcia/openwave-streamdeck/compare/v0.7.1...v0.7.2) (2026-10-02)
 
 
