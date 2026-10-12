@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "dev.openwave.sdPlugin"))
+sys.path.insert(0, os.path.join(ROOT, "systems.garcia.openwave.sdPlugin"))
 
 from owdeck import render                           # noqa: E402
 

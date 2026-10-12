@@ -237,7 +237,7 @@ make package     # dist/openwave-streamdeck-<version>.zip (+ .sha256)
 ### Uninstall
 
 ```sh
-rm -rf ~/.config/opendeck/plugins/dev.openwave.sdPlugin
+rm -rf ~/.config/opendeck/plugins/systems.garcia.openwave.sdPlugin
 ```
 
 ## Troubleshooting
@@ -268,7 +268,7 @@ OpenWave's `Changed` signal. Install `python-gobject` (Arch) or
 what it rendered into the plugin's log.
 
 **Where are the logs?** The plugin writes
-`~/.config/opendeck/plugins/dev.openwave.sdPlugin/plugin.log`. Start OpenDeck
+`~/.config/opendeck/plugins/systems.garcia.openwave.sdPlugin/plugin.log`. Start OpenDeck
 with `OPENWAVE_DECK_DEBUG=1` for the full event firehose.
 
 ## Development
@@ -300,7 +300,7 @@ plugin that dies — the keys just stop responding, with nothing to say why.
 ### Layout
 
 ```
-dev.openwave.sdPlugin/
+systems.garcia.openwave.sdPlugin/
   manifest.json     actions, icons, the property inspectors
   run.sh            env scrub, then /usr/bin/python3
   plugin.py         event loop; one process, no dependencies
@@ -361,14 +361,14 @@ preset) on `main`:
 | `BREAKING CHANGE:` in the body | major |
 | `chore:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:` | none |
 
-A release writes the version into `dev.openwave.sdPlugin/manifest.json` as well
+A release writes the version into `systems.garcia.openwave.sdPlugin/manifest.json` as well
 as tagging — the manifest is the only place a version is visible to someone
 using the plugin — updates [`CHANGELOG.md`](CHANGELOG.md), and attaches the
 installable zip and its `.sha256` to the GitHub release. `next` publishes
 prereleases; the manifest gets only their `MAJOR.MINOR.PATCH`, since it has no
 field for a prerelease tag.
 
-The zip contains the `dev.openwave.sdPlugin` directory *at its root*, which is
+The zip contains the `systems.garcia.openwave.sdPlugin` directory *at its root*, which is
 what OpenDeck's installer expects; a zip of that directory's contents installs a
 plugin with no manifest where one should be. It is built with Python's
 `zipfile`, keeping `run.sh` executable and leaving out bytecode and logs.

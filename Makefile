@@ -1,4 +1,4 @@
-PLUGIN := dev.openwave.sdPlugin
+PLUGIN := systems.garcia.openwave.sdPlugin
 PLUGINS_DIR := $(HOME)/.config/opendeck/plugins
 
 .PHONY: test validate check package preview install clean

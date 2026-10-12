@@ -13,7 +13,7 @@ import unittest
 
 PLUGIN_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "dev.openwave.sdPlugin",
+    "systems.garcia.openwave.sdPlugin",
 )
 sys.path.insert(0, PLUGIN_DIR)
 

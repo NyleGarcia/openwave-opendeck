@@ -1,7 +1,7 @@
 {
   "Name": "OpenWave",
   "Description": "Control OpenWave's mixes from a Stream Deck.",
-  "Author": "Zedwil",
+  "Author": "NyleGarcia",
   "Version": "0.7.2",
   "Icon": "icons/plugin",
   "Category": "OpenWave",
@@ -20,7 +20,7 @@
   "Actions": [
     {
       "Name": "Mix Volume",
-      "UUID": "dev.openwave.mixlevel",
+      "UUID": "systems.garcia.openwave.mixlevel",
       "Icon": "icons/mixlevel",
       "Tooltip": "Master volume of one OpenWave mix. Press to mute.",
       "Controllers": [
@@ -47,7 +47,7 @@
     },
     {
       "Name": "Source Volume",
-      "UUID": "dev.openwave.sourcelevel",
+      "UUID": "systems.garcia.openwave.sourcelevel",
       "Icon": "icons/sourcelevel",
       "Tooltip": "Trim of one microphone or source, in every mix at once. Press to mute.",
       "Controllers": [
@@ -74,7 +74,7 @@
     },
     {
       "Name": "Source Level per Mix",
-      "UUID": "dev.openwave.sendlevel",
+      "UUID": "systems.garcia.openwave.sendlevel",
       "Icon": "icons/sendlevel",
       "Tooltip": "One source's level inside a single mix, leaving every other mix alone. Press to mute.",
       "Controllers": [
@@ -101,7 +101,7 @@
     },
     {
       "Name": "Mic Group",
-      "UUID": "dev.openwave.micgroup",
+      "UUID": "systems.garcia.openwave.micgroup",
       "Icon": "icons/micgroup",
       "Tooltip": "Hand a microphone group over to its next microphone.",
       "Controllers": [
@@ -118,7 +118,7 @@
     },
     {
       "Name": "Scene",
-      "UUID": "dev.openwave.scene",
+      "UUID": "systems.garcia.openwave.scene",
       "Icon": "icons/scene",
       "Tooltip": "Recall an OpenWave scene; optionally hold to save the current state into it.",
       "Controllers": [
@@ -135,7 +135,7 @@
     },
     {
       "Name": "Effect Toggle",
-      "UUID": "dev.openwave.fxtoggle",
+      "UUID": "systems.garcia.openwave.fxtoggle",
       "Icon": "icons/fxtoggle",
       "Tooltip": "Flip a microphone's low cut, gate, compressor or mono, with an LED for its state.",
       "Controllers": [

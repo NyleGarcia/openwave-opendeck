@@ -36,12 +36,12 @@ logging.basicConfig(
 )
 log = logging.getLogger("openwave-deck")
 
-VOLUME = "dev.openwave.mixlevel"
-SOURCE_LEVEL = "dev.openwave.sourcelevel"
-SEND_LEVEL = "dev.openwave.sendlevel"
-MIC_GROUP = "dev.openwave.micgroup"
-SCENE = "dev.openwave.scene"
-FX_TOGGLE = "dev.openwave.fxtoggle"
+VOLUME = "systems.garcia.openwave.mixlevel"
+SOURCE_LEVEL = "systems.garcia.openwave.sourcelevel"
+SEND_LEVEL = "systems.garcia.openwave.sendlevel"
+MIC_GROUP = "systems.garcia.openwave.micgroup"
+SCENE = "systems.garcia.openwave.scene"
+FX_TOGGLE = "systems.garcia.openwave.fxtoggle"
 
 # One action per kind of thing, rather than one action with every target in a
 # single list. With three mixes and seven sources that list is 31 entries, of
