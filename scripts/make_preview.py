@@ -76,6 +76,16 @@ def states():
                                  value="-42 dB")),
             ("off", render.fx_key("Shure SM7B", "comp", False)),
         ],
+        "output": [
+            ("speakers", render.output_key("Personal Mix", "Desk Speakers",
+                                           1, 2)),
+            ("headphones", render.output_key("Personal Mix",
+                                             "Arctis Nova Pro", 2, 2,
+                                             kind="headphones")),
+            ("unplugged", render.output_key("Personal Mix", "Arctis Nova Pro",
+                                            2, 2, kind="headphones",
+                                            missing=True, note="unplugged")),
+        ],
         "strip": [
             ("live", render.strip("Game Mix", 72, False, level=0.18)),
             ("send", render.strip("Music", 35, False, kind="headphones",

@@ -87,6 +87,31 @@ def sinks():
     return found
 
 
+def output_devices():
+    """[(node.name, description)] of every sink a mix may be routed to.
+
+    OpenWave's own sinks are left out -- it refuses a mix routed into another
+    of its mixes, for the feedback loop that would make. Only the inspector
+    asks, so the extra pactl call is paid when a panel opens, not per tick.
+    """
+    out = _run(["pactl", "-f", "json", "list", "sinks"])
+    if not out:
+        return []
+    try:
+        listing = json.loads(out)
+    except json.JSONDecodeError:
+        return []
+    found = []
+    for sink in listing if isinstance(listing, list) else []:
+        if not isinstance(sink, dict):
+            continue
+        name = sink.get("name") or ""
+        if not name or name.startswith("openwave_"):
+            continue
+        found.append((name, sink.get("description") or name))
+    return found
+
+
 def set_volume(name, value):
     value = max(0.0, min(1.0, float(value)))
     _run(["pactl", "set-sink-volume", name, f"{round(value * 100)}%"])

@@ -330,3 +330,18 @@ def toggle_fx(source_id, effect):
         "toggle-fx", parameter,
         f"<('{_quote(source_id)}', '{_quote(effect)}')>",
     )
+
+
+def set_output(mix_id, choice):
+    """Route a mix to an output: "auto", "none" or a sink's node.name.
+
+    Needs an OpenWave new enough to register `set-output`; callers check
+    actions() first, because activating an unknown action is silently
+    dropped by GApplication and would look like a key that did nothing.
+    """
+    parameter = (GLib.Variant("(ss)", (mix_id, choice))
+                 if _HAVE_GI else None)
+    return activate(
+        "set-output", parameter,
+        f"<('{_quote(mix_id)}', '{_quote(choice)}')>",
+    )
