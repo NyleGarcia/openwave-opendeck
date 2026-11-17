@@ -149,6 +149,23 @@
           "Title": ""
         }
       ]
+    },
+    {
+      "Name": "Output Toggle",
+      "UUID": "systems.garcia.openwave.outputtoggle",
+      "Icon": "icons/outputtoggle",
+      "Tooltip": "Switch a mix between output devices, e.g. speakers and headphones. Shows which one is live.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "pi/outputtoggle.html",
+      "States": [
+        {
+          "Image": "icons/outputtoggle",
+          "Title": ""
+        }
+      ]
     }
   ]
 }
