@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/NyleGarcia/openwave-opendeck/compare/v1.0.0...v1.0.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* draw Scene and Effect Toggle keys ([b0b7895](https://github.com/NyleGarcia/openwave-opendeck/commit/b0b78959f62d72e1f4da8c726fde57440ae42aed))
+
 # [1.0.0](https://github.com/NyleGarcia/openwave-opendeck/compare/v0.7.2...v1.0.0) (2026-10-12)
 
 
