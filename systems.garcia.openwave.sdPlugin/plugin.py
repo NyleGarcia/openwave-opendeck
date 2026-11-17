@@ -335,28 +335,6 @@ class Plugin:
         """Draw one instance from live audio state."""
         settings = self._contexts.get(context) or {}
         action = settings.get("action", VOLUME)
-        if action == FX_TOGGLE:
-            data = self._openwave(force=True)
-            return {
-                "openwave": data is not None,
-                "mics": [
-                    {"value": s.get("id"), "label": s.get("name", "")}
-                    for s in (data or {}).get("sources") or []
-                    if s.get("kind") == "device"
-                ],
-                "themes": render.theme_choices(),
-                "theme": self._theme,
-            }
-        if action == SCENE:
-            data = ipc.scenes()
-            return {
-                "openwave": ipc.available(),
-                "scenes": [{"value": sid, "label": name}
-                           for sid, name in sorted(
-                               data.items(), key=lambda kv: kv[1].lower())],
-                "themes": render.theme_choices(),
-                "theme": self._theme,
-            }
         if action == MIC_GROUP:
             self._render_group(context, settings)
             return
