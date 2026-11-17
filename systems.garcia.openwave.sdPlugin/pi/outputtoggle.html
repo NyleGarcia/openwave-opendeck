@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenWave — Output Toggle</title>
+<link rel="stylesheet" href="_shared.css" />
+<script src="_shared.js"></script>
+</head>
+<body>
+  <label for="mix">Mix</label>
+  <select id="mix"><option value="">Loading…</option></select>
+  <div id="slots" style="margin-top:10px"></div>
+  <p class="hint">
+    Each press moves the mix to the next output in the list, skipping any
+    device that is unplugged. The key shows the live one. Two is the usual
+    pair; the extra slots are optional.
+  </p>
+  <p class="warn" id="warn" hidden></p>
+  <div style="margin-top:16px;border-top:1px solid #343a42;padding-top:14px">
+    <label for="theme">Colours <span style="font-weight:400;color:#8b929b">
+      — applies to every key</span></label>
+    <select id="theme"></select>
+  </div>
+
+<script>
+const mix = document.getElementById("mix");
+const slots = document.getElementById("slots");
+const warn = document.getElementById("warn");
+const NAMES = ["A", "B", "C", "D"];
+
+OpenWave.onPayload((payload) => {
+  if (!payload) return;
+  const node = document.getElementById("theme");
+  if (payload.themes && !node.options.length) {
+    for (const theme of payload.themes) {
+      node.appendChild(new Option(theme.label, theme.id));
+    }
+    node.onchange = () => OpenWave.saveGlobal({ theme: node.value });
+  }
+  if (payload.theme) node.value = payload.theme;
+  render(payload);
+});
+
+function say(text) {
+  warn.textContent = text;
+  warn.hidden = !text;
+}
+
+function render(payload) {
+  const settings = OpenWave.settings();
+  const devices = Array.isArray(payload.devices) ? payload.devices : [];
+  const mixes = Array.isArray(payload.mixes) ? payload.mixes : [];
+  say("");
+
+  mix.innerHTML = "";
+  if (!payload.openwave) {
+    mix.appendChild(new Option("OpenWave is not running", ""));
+    say("Start OpenWave, then reopen this panel.");
+  } else {
+    mix.appendChild(new Option("Choose a mix…", ""));
+    for (const m of mixes) {
+      const option = new Option(m.label, m.value);
+      if (m.value === settings.mix) option.selected = true;
+      mix.appendChild(option);
+    }
+    if (!payload.supported) {
+      say("This OpenWave can't switch outputs remotely yet. Update it; " +
+          "the key works as soon as it can.");
+    }
+  }
+
+  slots.innerHTML = "";
+  const count = Math.max(2, Math.min(payload.slots || 4, NAMES.length));
+  for (let i = 0; i < count; i++) {
+    const key = "output" + (i + 1);
+    const label = document.createElement("label");
+    label.htmlFor = key;
+    label.style.marginTop = i ? "8px" : "0";
+    label.textContent = "Output " + NAMES[i] + (i >= 2 ? " (optional)" : "");
+    const select = document.createElement("select");
+    select.id = key;
+    select.appendChild(new Option(i >= 2 ? "None" : "Choose a device…", ""));
+    for (const d of devices) {
+      const option = new Option(d.label, d.value);
+      if (d.value === settings[key]) option.selected = true;
+      select.appendChild(option);
+    }
+    select.onchange = () => {
+      // Keep each device's name with it: once unplugged, PipeWire forgets
+      // the description and only the node name is left.
+      const labels = Object.assign({}, OpenWave.settings().output_labels);
+      if (select.value) {
+        labels[select.value] = select.options[select.selectedIndex].text
+          .replace(/ \(unplugged\)$/, "");
+      }
+      OpenWave.save({ [key]: select.value, output_labels: labels });
+    };
+    slots.appendChild(label);
+    slots.appendChild(select);
+  }
+}
+
+mix.onchange = () => OpenWave.save({
+  mix: mix.value,
+  mix_label: mix.value ? mix.options[mix.selectedIndex].text : "",
+});
+OpenWave.report("outputtoggle inspector loaded");
+</script>
+</body>
+</html>

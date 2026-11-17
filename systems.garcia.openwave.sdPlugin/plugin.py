@@ -42,6 +42,23 @@ SEND_LEVEL = "systems.garcia.openwave.sendlevel"
 MIC_GROUP = "systems.garcia.openwave.micgroup"
 SCENE = "systems.garcia.openwave.scene"
 FX_TOGGLE = "systems.garcia.openwave.fxtoggle"
+OUTPUT_TOGGLE = "systems.garcia.openwave.outputtoggle"
+
+# Output slots on one toggle key. Two is the usual case -- speakers and
+# headphones -- but cycling a list costs nothing more than swapping a pair,
+# and a third device (a TV, a dock) is common enough to allow for.
+MAX_OUTPUTS = 4
+OUTPUT_SLOTS = tuple(f"output{i}" for i in range(1, MAX_OUTPUTS + 1))
+# OpenWave's two non-device choices. "auto" follows the system default sink,
+# so it is always "present"; "none" is a mix routed nowhere.
+AUTO_OUTPUT, NO_OUTPUT = "auto", "none"
+SPECIAL_OUTPUTS = {AUTO_OUTPUT: "System default", NO_OUTPUT: "Off"}
+# How long the list of OpenWave's registered actions is trusted. Long, since
+# it only changes when OpenWave is upgraded and restarted; a restart also
+# shows as the snapshot going away and coming back, which drops it early.
+ACTIONS_SECONDS = 30.0
+_HEADPHONE_WORDS = ("headphone", "headset", "earbud", "earphone", "arctis",
+                    "airpods", "buds")
 
 # One action per kind of thing, rather than one action with every target in a
 # single list. With three mixes and seven sources that list is 31 entries, of
@@ -145,6 +162,43 @@ def step_percent(settings):
     return max(MIN_STEP, min(MAX_STEP, step))
 
 
+def output_choices(settings):
+    """The output slots a toggle key cycles through, in order, deduplicated.
+
+    Read slot by slot rather than as a list because the inspector saves each
+    dropdown on its own; an emptied middle slot just drops out.
+    """
+    seen = []
+    for slot in OUTPUT_SLOTS:
+        value = settings.get(slot)
+        if isinstance(value, str) and value and value not in seen:
+            seen.append(value)
+    return seen
+
+
+def output_label(settings, choice, live_labels=None):
+    """A human name for an output choice.
+
+    The inspector stores each device's description when it is picked, so an
+    unplugged device still has a name -- pactl forgets a sink entirely the
+    moment it goes, and "alsa_output.usb-…" is not something to put on a key.
+    """
+    if choice in SPECIAL_OUTPUTS:
+        return SPECIAL_OUTPUTS[choice]
+    labels = settings.get("output_labels")
+    if isinstance(labels, dict) and labels.get(choice):
+        return labels[choice]
+    if live_labels and live_labels.get(choice):
+        return live_labels[choice]
+    return choice
+
+
+def device_glyph(label):
+    lowered = (label or "").lower()
+    return ("headphones" if any(w in lowered for w in _HEADPHONE_WORDS)
+            else "speaker")
+
+
 def split_cell(ident):
     source_id, _, mix_id = ident.partition(":")
     return source_id, mix_id
@@ -175,6 +229,10 @@ class Plugin:
         self._sinks = {}
         self._sinks_at = 0.0
         self._theme = render.DEFAULT_THEME
+        self._actions = None
+        self._actions_at = 0.0
+        self._device_names = {}
+        self._device_names_at = 0.0
 
     # ------------------------------------------------------------ outbound
     def _send(self, event, context, payload=None):
@@ -194,8 +252,40 @@ class Plugin:
         if force or self._snapshot_at == 0.0 \
                 or now - self._snapshot_at >= SNAPSHOT_SECONDS:
             self._snapshot_at = now
-            self._snapshot = ipc.snapshot()
+            fresh = ipc.snapshot()
+            if fresh is not None and self._snapshot is None:
+                # OpenWave just came (back) up, possibly upgraded: what it
+                # registers may have changed.
+                self._actions = None
+            self._snapshot = fresh
         return self._snapshot
+
+    def _supports(self, name):
+        """Whether the running OpenWave registers an action.
+
+        set-output is newer than the rest; an older OpenWave drops an
+        unknown activation without a word, so a key has to ask first or it
+        looks like it did nothing.
+        """
+        now = time.monotonic()
+        if self._actions is None or now - self._actions_at >= ACTIONS_SECONDS:
+            self._actions_at = now
+            self._actions = set(ipc.actions())
+        return name in self._actions
+
+    def _live_device_name(self, node_name):
+        """PipeWire's description for a device no key has a saved name for.
+
+        Asked only when a label is missing -- an output chosen in OpenWave's
+        window rather than on the key -- and cached, so it is not a pactl
+        call per redraw.
+        """
+        now = time.monotonic()
+        if node_name not in self._device_names and \
+                now - self._device_names_at >= ACTIONS_SECONDS:
+            self._device_names_at = now
+            self._device_names = dict(graph.output_devices())
+        return self._device_names.get(node_name)
 
     def _sink_states(self):
         """Every sink's (volume, muted), refetched at most once a tick.
@@ -344,6 +434,9 @@ class Plugin:
         if action == FX_TOGGLE:
             self._render_fx(context, settings)
             return
+        if action == OUTPUT_TOGGLE:
+            self._render_output(context, settings)
+            return
 
         encoder = settings.get("controller") == "Encoder"
         state = self._read(settings)
@@ -443,6 +536,99 @@ class Plugin:
             self._send("showAlert", context)
             return
         self._openwave(force=True)
+        self._render(context)
+
+    def _output_state(self, settings):
+        """Everything an output key draws, or None while it is unconfigured.
+
+        The active output is read from OpenWave's snapshot, never remembered
+        by the key: OpenWave is the one that persists it, so a reconnect, a
+        restart or a change in the window all show up correctly by
+        construction.
+        """
+        mix_id = settings.get("mix")
+        choices = output_choices(settings)
+        if not mix_id or len(choices) < 2:
+            return None
+        data = self._openwave()
+        mix_name = settings.get("mix_label") or mix_id
+        if data is None:
+            return {"mix": mix_name, "ok": False, "note": "OpenWave closed"}
+        mix = next((m for m in data.get("mixes") or []
+                    if m.get("id") == mix_id), None)
+        if mix is None:
+            return {"mix": mix_name, "ok": False, "note": "Mix removed"}
+        mix_name = mix.get("name", mix_name)
+        if not self._supports("set-output"):
+            return {"mix": mix_name, "ok": False, "note": "Update OpenWave"}
+        current = (data.get("outputs") or {}).get(mix_id) or NO_OUTPUT
+        live = self._sink_states()
+        label = output_label(settings, current)
+        if label == current:
+            label = self._live_device_name(current) or current
+        missing = current not in SPECIAL_OUTPUTS and current not in live
+        return {
+            "mix": mix_name,
+            "ok": True,
+            "current": current,
+            "device": label,
+            "position": (choices.index(current) + 1
+                         if current in choices else 0),
+            "count": len(choices),
+            "missing": missing,
+            # A device unplugged while active leaves the mix silent: OpenWave
+            # does not fall back for an explicit choice. Say so.
+            "note": "unplugged" if missing else "",
+            "kind": device_glyph(label),
+        }
+
+    def _render_output(self, context, settings):
+        state = self._output_state(settings)
+        if state is None:
+            self._paint(context, render.unconfigured_key(
+                "Pick a mix", "and two outputs", kind="headphones"))
+            return
+        if not state["ok"]:
+            self._paint(context, render.output_key(
+                state["mix"], "", 0, 0, unavailable=True,
+                note=state["note"]))
+            return
+        self._paint(context, render.output_key(
+            state["mix"], state["device"], state["position"], state["count"],
+            kind=state["kind"], missing=state["missing"], note=state["note"]))
+
+    def _next_output(self, settings, current):
+        """The next configured output that can actually play, or None.
+
+        Unplugged devices are skipped rather than chosen: routing a mix to a
+        sink that is not there makes it silent, which is never what a press
+        meant. A current output outside the list starts from the top.
+        """
+        choices = output_choices(settings)
+        live = self._sink_states()
+        start = choices.index(current) if current in choices else -1
+        for step in range(1, len(choices) + 1):
+            candidate = choices[(start + step) % len(choices)]
+            if candidate == current:
+                continue
+            if candidate in SPECIAL_OUTPUTS or candidate in live:
+                return candidate
+        return None
+
+    def _toggle_output(self, context):
+        settings = self._contexts.get(context) or {}
+        state = self._output_state(settings)
+        if state is None or not state["ok"]:
+            self._send("showAlert", context)
+            return
+        target = self._next_output(settings, state["current"])
+        if target is None or not ipc.set_output(settings["mix"], target):
+            self._send("showAlert", context)
+            return
+        # Activation has no reply and OpenWave's push lags its debounce;
+        # show the switch now; the push that follows confirms or corrects it.
+        if isinstance(self._snapshot, dict):
+            self._snapshot.setdefault("outputs", {})[settings["mix"]] = target
         self._render(context)
 
     def _cycle_target(self, context):
@@ -599,6 +785,34 @@ class Plugin:
                 "themes": render.theme_choices(),
                 "theme": self._theme,
             }
+        if action == OUTPUT_TOGGLE:
+            data = self._openwave(force=True)
+            settings = settings or {}
+            devices = [{"value": name, "label": label}
+                       for name, label in graph.output_devices()]
+            known = {d["value"] for d in devices}
+            # A chosen device that is unplugged right now stays offered,
+            # under the name saved for it, so opening the panel never
+            # silently clears a slot.
+            for choice in output_choices(settings):
+                if choice not in known and choice not in SPECIAL_OUTPUTS:
+                    devices.append({
+                        "value": choice,
+                        "label": output_label(settings, choice)
+                        + " (unplugged)"})
+            return {
+                "openwave": data is not None,
+                "supported": data is not None and self._supports("set-output"),
+                "mixes": [{"value": m.get("id"),
+                           "label": m.get("name", m.get("id"))}
+                          for m in (data or {}).get("mixes") or []],
+                "devices": [{"value": AUTO_OUTPUT,
+                             "label": SPECIAL_OUTPUTS[AUTO_OUTPUT]}]
+                + devices,
+                "slots": MAX_OUTPUTS,
+                "themes": render.theme_choices(),
+                "theme": self._theme,
+            }
         if action == MIC_GROUP:
             data = self._openwave(force=True)
             return {
@@ -729,6 +943,8 @@ class Plugin:
                 self._switch_group(context)
             elif settings.get("action") == FX_TOGGLE:
                 self._toggle_fx(context)
+            elif settings.get("action") == OUTPUT_TOGGLE:
+                self._toggle_output(context)
             elif event == "touchTap" and self._cycle_target(context):
                 pass
             elif settings.get("action") == SCENE:
@@ -780,6 +996,10 @@ class Plugin:
         150 ms debounce instead of at the next multi-second refresh.
         """
         snap = states.get("snapshot")
+        if snap and self._snapshot is None:
+            # OpenWave just came (back) up, possibly upgraded: what it
+            # registers may have changed.
+            self._actions = None
         if snap:
             try:
                 self._snapshot = json.loads(snap)
