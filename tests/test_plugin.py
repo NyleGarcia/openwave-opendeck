@@ -1014,6 +1014,13 @@ class TestScene(PluginCase):
         self.plugin._handle({"event": "keyUp", "context": "c"})
         self.assertEqual(self.calls, [])
 
+    def test_the_key_draws_the_scene(self):
+        self._place()
+        self.plugin._drawn.clear()
+        self.plugin._render("c")
+        self.assertTrue(self.events("setImage"),
+                        "a scene key must paint, not return a payload")
+
     def test_inspector_offers_the_scenes_sorted_by_name(self):
         payload = self.plugin._inspector_payload(P.SCENE, {})
         self.assertTrue(payload["openwave"])
@@ -1042,6 +1049,13 @@ class TestFxToggle(PluginCase):
         self.press("c")
         self.assertTrue(self.events("showAlert"))
         self.assertEqual([c for c in self.calls if c[0] == "fx"], [])
+
+    def test_the_key_draws_the_effect(self):
+        self.place("c", P.FX_TOGGLE, {"source": "dock", "effect": "gate"})
+        self.plugin._drawn.clear()
+        self.plugin._render("c")
+        self.assertTrue(self.events("setImage"),
+                        "an effect key must paint, not return a payload")
 
     def test_inspector_offers_only_microphones(self):
         payload = self.plugin._inspector_payload(P.FX_TOGGLE, {})
