@@ -119,3 +119,73 @@ jobs:
           semantic_version: 25.0.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # semantic-release pushes the release commit and the tag before it
+      # publishes the GitHub release, so a failure in between (a transient
+      # rejection of a push, say) leaves a tag with no release and no assets.
+      # A re-run cannot repair that: it sees the tag and finds nothing to
+      # release. This step publishes the newest tag if it has no release, built
+      # from the tag itself because the working tree is dirty after
+      # semantic-release's prepare step. After a healthy run it does nothing.
+      - name: Publish the latest tag if it has no release
+        if: always()
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # The repo is public, so fetching needs no credentials.
+          git fetch --tags --force origin
+          git fetch origin "+refs/heads/$REF_NAME:refs/remotes/origin/$REF_NAME"
+
+          if ! tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*' "origin/$REF_NAME"); then
+            echo "No release tag on $REF_NAME; nothing to publish."
+            exit 0
+          fi
+
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "Release $tag already exists."
+            exit 0
+          fi
+
+          echo "Tag $tag has no release; publishing it."
+          worktree="$RUNNER_TEMP/release-$tag"
+          git worktree add --detach "$worktree" "$tag"
+          cd "$worktree"
+          python3 scripts/package.py
+
+          # This version's section of the changelog, from the line after its
+          # heading to the line before the next version heading. Minor and
+          # major releases use "# [x.y.z]" and patches "## [x.y.z]"; the
+          # "### ..." sub-headings inside the section are kept.
+          version=${tag#v}
+          notes=$(awk -v v="$version" '
+            BEGIN { h1 = "# [" v "]"; h2 = "## [" v "]" }
+            /^##? \[[0-9]/ {
+              if (on) exit
+              if (index($0, h1) == 1 || index($0, h2) == 1) { on = 1; next }
+            }
+            on { print }
+          ' CHANGELOG.md | sed '/./,$!d')
+
+          args=(--verify-tag --title "$tag")
+          if [ -n "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            printf '%s\n' "$notes" > "$RUNNER_TEMP/notes-$tag.md"
+            args+=(--notes-file "$RUNNER_TEMP/notes-$tag.md")
+          else
+            args+=(--generate-notes)
+          fi
+          case "$tag" in
+            *-*) args+=(--prerelease) ;;
+          esac
+
+          # The labels match the ones in .releaserc.json. The files are
+          # found first and labelled after: a glob with "#label" on the end
+          # would be looking for a file whose name ends in the label.
+          archive=$(ls dist/openwave-opendeck-*.zip)
+          checksum=$(ls dist/openwave-opendeck-*.zip.sha256)
+          gh release create "$tag" "${args[@]}" \
+            "$archive#OpenDeck plugin" \
+            "$checksum#SHA-256 checksum"
