@@ -1,0 +1,146 @@
+{
+  "Name": "OpenWave",
+  "Description": "Control OpenWave's mixes from a Stream Deck.",
+  "systems.garcia.openwave.mixlevel": {
+    "Name": "Mix Volume",
+    "Tooltip": "Master volume of one OpenWave mix. Press to mute."
+  },
+  "systems.garcia.openwave.sourcelevel": {
+    "Name": "Source Volume",
+    "Tooltip": "Trim of one microphone or source, in every mix at once. Press to mute."
+  },
+  "systems.garcia.openwave.sendlevel": {
+    "Name": "Source Level per Mix",
+    "Tooltip": "One source's level inside a single mix, leaving every other mix alone. Press to mute."
+  },
+  "systems.garcia.openwave.micgroup": {
+    "Name": "Mic Group",
+    "Tooltip": "Hand a microphone group over to its next microphone."
+  },
+  "systems.garcia.openwave.scene": {
+    "Name": "Scene",
+    "Tooltip": "Recall an OpenWave scene; optionally hold to save the current state into it."
+  },
+  "systems.garcia.openwave.fxtoggle": {
+    "Name": "Effect Toggle",
+    "Tooltip": "Flip a microphone's low cut, gate, compressor or mono, with an LED for its state."
+  },
+  "systems.garcia.openwave.outputtoggle": {
+    "Name": "Output Toggle",
+    "Tooltip": "Switch a mix between output devices, e.g. speakers and headphones. Shows which one is live."
+  },
+  "Localization": {
+    "key.muted": "MUTED",
+    "key.closed": "OpenWave closed",
+    "key.missing": "Missing",
+    "key.in_settings": "in settings",
+
+    "key.pick.mix": "Pick a mix",
+    "key.pick.source": "Pick a source",
+    "key.pick.and_mix": "and a mix",
+    "key.pick.group": "Pick a group",
+    "key.pick.scene": "Pick a scene",
+    "key.pick.fx": "Pick a mic + effect",
+    "key.pick.two_outputs": "and two outputs",
+
+    "key.group.all_muted": "all muted",
+    "key.group.mics": "{count} mics",
+
+    "key.scene.corner": "SCENE",
+    "key.scene.title": "Scene",
+    "key.scene.recall": "press to recall",
+    "key.scene.saved": "saved ✓",
+
+    "key.fx.lowcut": "LOW CUT",
+    "key.fx.gate": "GATE",
+    "key.fx.comp": "COMP",
+    "key.fx.mono": "MONO",
+
+    "key.output.title": "Output",
+    "key.output.nothing": "No output",
+    "key.output.auto": "System default",
+    "key.output.none": "Off",
+    "key.output.unplugged": "unplugged",
+    "key.output.mix_removed": "Mix removed",
+    "key.output.update": "Update OpenWave",
+
+    "strip.muted": "MUTED",
+    "strip.into": "into {mix}",
+
+    "theme.default": "Default",
+    "theme.amber": "Amber",
+    "theme.violet": "Violet",
+    "theme.mono": "Monochrome",
+    "theme.contrast": "High contrast",
+    "theme.light": "Light",
+
+    "pi.loading": "Loading…",
+    "pi.choose": "Choose…",
+    "pi.none": "None",
+    "pi.colours": "Colours",
+    "pi.colours_scope": "— applies to every key",
+    "pi.not_running": "OpenWave is not running",
+    "pi.start_openwave": "Start OpenWave, then reopen this panel.",
+
+    "pi.level.control": "Control",
+    "pi.level.stack": "Stack more targets (tap the strip to cycle)",
+    "pi.level.also": "Also control",
+    "pi.level.and": "And",
+    "pi.level.source": "Source",
+    "pi.level.in_mix": "In which mix",
+    "pi.level.press": "When pressed",
+    "pi.level.press.mute": "Mute / unmute",
+    "pi.level.press.up": "Turn up",
+    "pi.level.press.down": "Turn down",
+    "pi.level.step": "Step size",
+    "pi.level.hint": "Rotate to adjust, press to mute.",
+    "pi.level.hint.mix": "A mix's master. It moves everything routed into the mix and everything capturing from it at once, and works whether OpenWave is running or not.",
+    "pi.level.hint.source": "A source's trim, applied ahead of the per-mix faders, so it moves that source in every mix at once. Needs OpenWave running.",
+    "pi.level.hint.send": "One source's level inside a single mix. Every other mix is left alone, which is what separates this from Source Volume. Needs OpenWave running.",
+    "pi.level.choose_target": "Choose what to control…",
+    "pi.level.choose_pair": "Choose a source and a mix.",
+    "pi.level.nothing": "Nothing to control",
+    "pi.level.nothing_configured": "OpenWave has nothing of this kind configured yet.",
+    "pi.level.needs_openwave": "OpenWave is not running, and this action needs it.",
+    "pi.level.needs_openwave_send": "OpenWave is not running, and this action needs it: a source's level inside one mix is OpenWave's own state.",
+    "pi.level.only_mixes": "OpenWave is not running, so only mixes can be listed. Start it to choose a source or a send.",
+    "pi.level.system_output": "{name}  (system output)",
+    "pi.level.system_output_warning": "This mix is the system output. Muting it silences everything, not just OpenWave.",
+    "pi.level.into": "{name} into {mix}",
+    "pi.level.group.mixes": "Mixes",
+    "pi.level.group.microphones": "Microphones",
+    "pi.level.group.sources": "Sources",
+    "pi.level.group.current": "Currently set",
+
+    "pi.micgroup.label": "Microphone group",
+    "pi.micgroup.hint": "Press the key to hand the group over to its next microphone. Only one microphone in a group is live at a time; microphones in other groups are left alone.",
+    "pi.micgroup.choose": "Choose a group…",
+    "pi.micgroup.none": "No groups yet",
+    "pi.micgroup.how": "Group two microphones in OpenWave first: drag one row onto the middle of another.",
+
+    "pi.scene.label": "Scene",
+    "pi.scene.hint": "Press the key to recall the scene — every trim, send, mute, output, master and device setting it holds.",
+    "pi.scene.hold": "Hold the key (~1s) to save the current state into this scene",
+    "pi.scene.choose": "Choose a scene…",
+    "pi.scene.none": "No scenes yet",
+    "pi.scene.how": "Save a scene in OpenWave first: the camera menu in the header bar, “Save current as…”.",
+
+    "pi.fx.mic": "Microphone",
+    "pi.fx.effect": "Effect",
+    "pi.fx.lowcut": "Low cut (off ↔ 80 Hz)",
+    "pi.fx.gate": "Gate",
+    "pi.fx.comp": "Compressor",
+    "pi.fx.mono": "Mono",
+    "pi.fx.hint": "Press the key to flip the effect in that microphone's DSP chain. The LED shows whether it is currently in the chain; thresholds are set in OpenWave (the FX popover, or Auto-calibrate).",
+    "pi.fx.choose": "Choose a microphone…",
+
+    "pi.output.mix": "Mix",
+    "pi.output.hint": "Each press moves the mix to the next output in the list, skipping any device that is unplugged. The key shows the live one. Two is the usual pair; the extra slots are optional.",
+    "pi.output.choose_mix": "Choose a mix…",
+    "pi.output.choose_device": "Choose a device…",
+    "pi.output.slot": "Output {letter}",
+    "pi.output.slot_optional": "Output {letter} (optional)",
+    "pi.output.unplugged": "{name} (unplugged)",
+    "pi.output.unsupported": "This OpenWave can't switch outputs remotely yet. Update it; the key works as soon as it can."
+  }
+}

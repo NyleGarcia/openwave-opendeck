@@ -94,6 +94,99 @@ def resolve_image(reference):
                for suffix in IMAGE_SUFFIXES)
 
 
+# The only placeholder a translation may use: a bare {word}. Anything else
+# with a brace in it -- {0}, {name.attr}, {name!r}, a lone { -- is refused
+# here, so a language file cannot ask the plugin for more than a value by
+# name, and a typo shows up in CI rather than as braces on someone's key.
+PLACEHOLDER = re.compile(r"\{(\w+)\}")
+# en, fr, pt_BR. Checked because the files are copied up next to
+# manifest.json on install, where a file called anything else could land on
+# top of something the plugin needs.
+LANGUAGE_CODE = re.compile(r"^[a-z]{2,3}(_[A-Z]{2})?$")
+
+
+def _placeholders(text):
+    return sorted(PLACEHOLDER.findall(text))
+
+
+def check_languages(manifest):
+    """Every lang/<code>.json says the same things as lang/en.json.
+
+    Same Localization keys and the same {placeholders} in each: a missing key
+    falls back to English, which is fine, but a renamed placeholder shows its
+    braces on someone's key. en.json also has to agree with the manifest,
+    since OpenDeck shows one and falls back to the other.
+    """
+    lang = os.path.join(BUNDLE, "lang")
+    files = {}
+    for name in sorted(os.listdir(lang)) if os.path.isdir(lang) else []:
+        if not name.endswith(".json"):
+            continue
+        if not check(LANGUAGE_CODE.match(name[:-5]),
+                     f"lang/{name} is not named for a language code "
+                     f"(en.json, pt_BR.json)"):
+            continue
+        try:
+            data = json.load(open(os.path.join(lang, name),
+                                  encoding="utf-8"))
+        except ValueError as exc:
+            problems.append(f"lang/{name} is not valid JSON: {exc}")
+            continue
+        if check(isinstance(data, dict), f"lang/{name} is not an object"):
+            files[name[:-5]] = data
+    if not check("en" in files, "lang/en.json is missing"):
+        return
+    reference = files["en"].get("Localization")
+    if not isinstance(reference, dict):
+        reference = {}
+    for field in ("Name", "Description"):
+        check(files["en"].get(field) == manifest.get(field),
+              f"lang/en.json {field} differs from the manifest")
+    actions = {action.get("UUID"): action
+               for action in manifest.get("Actions") or []}
+    for code, data in files.items():
+        where = f"lang/{code}.json"
+        for field in ("Name", "Description"):
+            check(isinstance(data.get(field), str) and data[field].strip(),
+                  f"{where} needs a {field}")
+        for uuid, action in actions.items():
+            entry = data.get(uuid)
+            if not isinstance(entry, dict):
+                entry = {}
+            check(all(isinstance(entry.get(field), str)
+                      and entry[field].strip()
+                      for field in ("Name", "Tooltip")),
+                  f"{where}: {uuid} needs a Name and a Tooltip")
+            if code == "en":
+                check(entry.get("Name") == action.get("Name")
+                      and entry.get("Tooltip") == action.get("Tooltip"),
+                      f"{where}: {uuid} differs from the manifest")
+        for key in sorted(set(data) - set(actions)
+                          - {"Name", "Description", "Localization"}):
+            problems.append(f"{where} has {key}, which is neither an action "
+                            f"in the manifest nor a field OpenDeck reads")
+        strings = data.get("Localization")
+        if not check(isinstance(strings, dict),
+                     f"{where} has no Localization object"):
+            continue
+        for key in sorted(set(reference) - set(strings)):
+            problems.append(f"{where} is missing {key}")
+        for key in sorted(set(strings) - set(reference)):
+            problems.append(f"{where} has {key}, which en.json does not")
+        for key, text in sorted(strings.items()):
+            if not check(isinstance(text, str) and text.strip(),
+                         f"{where}: {key} is not a non-empty string"):
+                continue
+            leftover = PLACEHOLDER.sub("", text)
+            check("{" not in leftover and "}" not in leftover,
+                  f"{where}: {key} has a brace that is not part of a plain "
+                  f"{{name}} placeholder")
+            if isinstance(reference.get(key), str):
+                check(_placeholders(text) == _placeholders(reference[key]),
+                      f"{where}: {key} has different placeholders from "
+                      f"en.json")
+
+
 def main():
     manifest_path = os.path.join(BUNDLE, "manifest.json")
     if not check(os.path.isfile(manifest_path), "manifest.json is missing"):
@@ -152,13 +245,16 @@ def main():
                           f"{uuid}: layout {layout} has an item missing "
                           f"key/type/rect")
 
+    check_languages(manifest)
+
     for path in _modules():
         check_old_grammar(path)
 
     # Every file the entry point will import must be present in the bundle:
     # a module left out of a release zip is only discovered on someone's deck.
     for module in ("plugin.py", "owdeck/ws.py", "owdeck/graph.py",
-                   "owdeck/ipc.py", "owdeck/owstate.py", "owdeck/render.py"):
+                   "owdeck/ipc.py", "owdeck/owstate.py", "owdeck/render.py",
+                   "owdeck/i18n.py"):
         check(os.path.isfile(os.path.join(BUNDLE, module)),
               f"{module} is missing from the bundle")
 

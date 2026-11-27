@@ -297,6 +297,62 @@ what it rendered into the plugin's log.
 `~/.config/opendeck/plugins/systems.garcia.openwave.sdPlugin/plugin.log`. Start OpenDeck
 with `OPENWAVE_DECK_DEBUG=1` for the full event firehose.
 
+## Translations
+
+The keys, the property inspectors and the action list follow OpenDeck's
+language (Settings → Language), and fall back to English for a language with
+no file. English and French are included. The French was not written by a
+native speaker: corrections are welcome, and `fr.json` is the only file a
+correction needs to touch.
+
+Names that come from OpenWave — mixes, sources, scenes, devices — are shown as
+OpenWave has them and are not translated.
+
+Each language is one file in `systems.garcia.openwave.sdPlugin/lang/`, named
+by its code (`en.json`, `fr.json`). The file is in the layout OpenDeck reads
+for a plugin's translations: the plugin's and each action's `Name` and
+`Tooltip` at the top level, and every string the plugin draws under
+`Localization`. `make install` and the release zip copy the files next to
+`manifest.json`, where OpenDeck looks for them.
+
+### Adding a language
+
+1. Find the code OpenDeck uses for the language (`de`, `es`, `pt_BR`, ...).
+   A region with no file of its own uses its base language, so `fr_FR` picks
+   `fr.json`.
+2. Copy the English file, which is the reference every other language is
+   checked against:
+
+   ```sh
+   cd systems.garcia.openwave.sdPlugin/lang
+   cp en.json de.json
+   ```
+
+3. Translate the values and leave every key as it is:
+   - `Name` and `Description` at the top, and the `Name` and `Tooltip` of each
+     `systems.garcia.openwave.*` action, are what OpenDeck shows in its action
+     list.
+   - `Localization` holds everything the plugin draws. `key.*` is the text on
+     the keys, `strip.*` the dial's touch strip, `pi.*` the property
+     inspectors and `theme.*` the theme names.
+   - Keep `{placeholders}` such as `{count}` or `{mix}` spelled exactly as in
+     English. They may move within the sentence. Only a plain `{name}` is a
+     placeholder; any other use of `{` or `}` is refused.
+   - Keys are 144 px wide. Keep `key.*` strings about as short as the English
+     ones; the corner labels (`key.muted`, `key.scene.corner`) and the
+     headline of an unconfigured key (`key.pick.*`, about 13 characters) have
+     the least room.
+4. Run `make check`. It fails on a missing or extra key, a placeholder that
+   differs from `en.json`, an action without a `Name` and `Tooltip`, and
+   invalid JSON.
+5. Run `make install`, restart OpenDeck, set its language (Settings →
+   Language) and look at every key state. `plugin.log` says which language was
+   picked, as `language: de`.
+
+The translation system follows the one
+[MrBretze](https://github.com/MrBretze) contributed to
+[gpu-screen-recorder-opendeck](https://github.com/NyleGarcia/gpu-screen-recorder-opendeck/pull/3).
+
 ## Development
 
 ```sh
@@ -314,7 +370,9 @@ plugin *quietly*. A missing property inspector gives an empty panel, a missing
 layout gives a blank touch strip, and neither writes anything to any log. The
 validator resolves every path the manifest names — inspectors, layouts, icons,
 each state image, every module the entry point imports — so a bundle that would
-fail silently on a deck fails loudly in CI instead.
+fail silently on a deck fails loudly in CI instead. It also holds every
+language file to `en.json`: the same keys, the same `{placeholders}`, and a
+name and tooltip for each action.
 
 Node ids are resolved by `node.name` on every use, never cached: they are
 reassigned whenever a node reappears, and OpenWave destroys and recreates its
@@ -335,6 +393,8 @@ systems.garcia.openwave.sdPlugin/
   owdeck/owstate.py read-only readers for OpenWave's JSON
   owdeck/ipc.py     org.gtk.Actions calls into a running OpenWave
   owdeck/render.py  the SVG the keys are drawn from
+  owdeck/i18n.py    the strings, in OpenDeck's language
+  lang/             one <code>.json per language
   layouts/          the encoder strip layout
   pi/               property inspectors
 scripts/            validator, packager, version writer, preview renderer

@@ -12,6 +12,8 @@ the host for other panels.
 
 import base64
 
+from .i18n import t
+
 SIZE = 144
 
 # One accent per meaning, used for the glyph, the bar and the border alike so
@@ -79,7 +81,7 @@ def set_theme(name):
 
 
 def theme_choices():
-    return [{"id": key, "label": value["name"]}
+    return [{"id": key, "label": t(f"theme.{key}", default=value["name"])}
             for key, value in THEMES.items()]
 
 
@@ -244,7 +246,7 @@ def level_key(name, percent, muted, kind="speaker", unavailable=False,
         _glyph(kind, accent, 11, 11, 1.3, muted=muted)
         + f'<text x="{SIZE - 13}" y="42" fill="{accent}" font-size="30" '
         f'font-family="{FONT}" font-weight="bold" text-anchor="end">'
-        f'{"MUTED" if muted else f"{percent}%"}</text>'
+        f'{_escape(t("key.muted")) if muted else f"{percent}%"}</text>'
         + _text_block(lines, (78 if context else 92) if len(lines) > 1
                       else (84 if context else 96),
                       23 if len(lines) == 1 else 20, THEME["text"])
@@ -283,12 +285,13 @@ def group_key(group, live_name, member_count, position=0,
         return _document(
             _glyph("mic", THEME["idle"], 50, 24, 1.75, muted=True)
             + _text_block(_wrap(group, 14), 104, 18, THEME["dim"])
-            + _text_block(["OpenWave closed"], 126, 13, THEME["dim"], weight="400"),
+            + _text_block([t("key.closed")], 126, 13, THEME["dim"],
+                          weight="400"),
             THEME["idle"])
 
     live = bool(live_name)
     accent = THEME["mic_live"] if live else THEME["muted"]
-    lines = _wrap(live_name or "all muted", 12)
+    lines = _wrap(live_name or t("key.group.all_muted"), 12)
     body = (
         _glyph("mic", accent, 11, 10, 1.3, muted=not live)
         + f'<text x="{SIZE - 13}" y="34" fill="{THEME["dim"]}" font-size="16" '
@@ -299,7 +302,7 @@ def group_key(group, live_name, member_count, position=0,
         + _glyph("swap", accent, 14, 104, 1.05)
         + f'<text x="{SIZE - 15}" y="126" fill="{THEME["dim"]}" font-size="14" '
         f'font-family="{FONT}" text-anchor="end">'
-        f'{max(member_count, 0)} mics</text>'
+        f'{_escape(t("key.group.mics", count=max(member_count, 0)))}</text>'
     )
     return _document(body, accent)
 
@@ -328,7 +331,8 @@ def strip(name, percent, muted, kind="speaker", unavailable=False,
     item, which put a whole shrunken key card inside the strip.
     """
     accent = THEME["idle"] if unavailable else (THEME["muted"] if muted else THEME["live"])
-    readout = "--" if unavailable else ("MUTED" if muted else f"{percent}%")
+    readout = "--" if unavailable else (
+        t("strip.muted") if muted else f"{percent}%")
     # Two rows rather than one. The strip is 200 wide, and a name and a large
     # readout on the same line overlap the moment the name is longer than
     # "System" -- so the name gets the top row to itself and the readout sits
@@ -349,7 +353,8 @@ def strip(name, percent, muted, kind="speaker", unavailable=False,
         f'font-family="{FONT}" font-weight="600">'
         f'{_escape(_fit(name, 12))}</text>'
         + (f'<text x="54" y="{context_y}" fill="{THEME["dim"]}" font-size="15" '
-           f'font-family="{FONT}">into {_escape(_fit(context, 14))}</text>'
+           f'font-family="{FONT}">'
+           f'{_escape(t("strip.into", mix=_fit(context, 14)))}</text>'
            if context else "")
         + f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" '
         f'rx="{bar_h / 2}" fill="{THEME["track"]}"/>'
@@ -388,19 +393,22 @@ def scene_key(name, unavailable=False, saved=False):
     if unavailable:
         return _document(
             _glyph("swap", THEME["idle"], 50, 24, 1.75, muted=True)
-            + _text_block(_wrap(name or "Scene", 12), 104, 18, THEME["dim"])
-            + _text_block(["OpenWave closed"], 126, 13, THEME["dim"],
+            + _text_block(_wrap(name or t("key.scene.title"), 12), 104, 18,
+                          THEME["dim"])
+            + _text_block([t("key.closed")], 126, 13, THEME["dim"],
                           weight="400"),
             THEME["idle"])
     accent = THEME["live"]
-    lines = _wrap(name or "Pick a scene", 12)
+    lines = _wrap(name or t("key.pick.scene"), 12)
     body = (
         _glyph("swap", accent, 11, 10, 1.3)
         + f'<text x="{SIZE - 13}" y="34" fill="{THEME["dim"]}" font-size="16" '
-        f'font-family="{FONT}" text-anchor="end">SCENE</text>'
+        f'font-family="{FONT}" text-anchor="end">'
+        f'{_escape(t("key.scene.corner"))}</text>'
         + _text_block(lines, 90 if len(lines) > 1 else 94,
                       23 if len(lines) == 1 else 20, THEME["text"])
-        + _text_block(["saved ✓" if saved else "press to recall"],
+        + _text_block([t("key.scene.saved") if saved
+                        else t("key.scene.recall")],
                       126, 13, accent if saved else THEME["dim"],
                       weight="700" if saved else "400")
     )
@@ -414,13 +422,11 @@ def fx_key(source_name, effect, on, unavailable=False, value=""):
     chain, hollow when it is not — with the effect's name as the
     headline and the microphone underneath.
     """
-    labels = {"lowcut": "LOW CUT", "gate": "GATE",
-              "comp": "COMP", "mono": "MONO"}
-    label = labels.get(effect, effect.upper())
+    label = t(f"key.fx.{effect}", default=effect.upper())
     if unavailable:
         return _document(
             _text_block([label], 74, 20, THEME["dim"])
-            + _text_block(["OpenWave closed"], 122, 13, THEME["dim"],
+            + _text_block([t("key.closed")], 122, 13, THEME["dim"],
                           weight="400"),
             THEME["idle"])
     accent = THEME["live"] if on else THEME["idle"]
@@ -451,14 +457,14 @@ def output_key(mix_name, device, position, count, kind="speaker",
     if unavailable:
         return _document(
             _glyph(kind, THEME["idle"], 50, 24, 1.75, muted=True)
-            + _text_block(_wrap(mix_name or "Output", 14), 104, 18,
-                          THEME["dim"])
-            + _text_block([note or "OpenWave closed"], 126, 13, THEME["dim"],
+            + _text_block(_wrap(mix_name or t("key.output.title"), 14), 104,
+                          18, THEME["dim"])
+            + _text_block([note or t("key.closed")], 126, 13, THEME["dim"],
                           weight="400"),
             THEME["idle"])
 
     accent = THEME["muted"] if missing else THEME["live"]
-    lines = _wrap(device or "No output", 12)
+    lines = _wrap(device or t("key.output.nothing"), 12)
     count = max(0, min(count, 6))
     gap = 16
     left = SIZE / 2 - (count - 1) * gap / 2

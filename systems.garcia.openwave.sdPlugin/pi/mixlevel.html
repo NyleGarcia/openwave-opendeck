@@ -13,37 +13,43 @@
 </head>
 <body>
   <div id="single">
-    <label for="target">Control</label>
-    <select id="target"><option value="">Loading…</option></select>
+    <label for="target" data-i18n="pi.level.control">Control</label>
+    <select id="target"><option value="" data-i18n="pi.loading">Loading…</option></select>
     <details id="stackBox" style="margin-top:8px">
-      <summary style="cursor:pointer;color:#8b929b">Stack more targets
+      <summary style="cursor:pointer;color:#8b929b"
+        data-i18n="pi.level.stack">Stack more targets
         (tap the strip to cycle)</summary>
-      <label for="target2" style="margin-top:8px">Also control</label>
+      <label for="target2" style="margin-top:8px"
+        data-i18n="pi.level.also">Also control</label>
       <select id="target2"></select>
-      <label for="target3" style="margin-top:8px">And</label>
+      <label for="target3" style="margin-top:8px"
+        data-i18n="pi.level.and">And</label>
       <select id="target3"></select>
     </details>
   </div>
   <div id="pair" hidden>
-    <label for="pairSource">Source</label>
+    <label for="pairSource" data-i18n="pi.level.source">Source</label>
     <select id="pairSource"></select>
-    <label for="pairMix" style="margin-top:12px">In which mix</label>
+    <label for="pairMix" style="margin-top:12px"
+      data-i18n="pi.level.in_mix">In which mix</label>
     <select id="pairMix"></select>
   </div>
   <div id="behaviour" style="margin-top:14px">
-    <label for="press">When pressed</label>
+    <label for="press" data-i18n="pi.level.press">When pressed</label>
     <select id="press">
-      <option value="mute">Mute / unmute</option>
-      <option value="up">Turn up</option>
-      <option value="down">Turn down</option>
+      <option value="mute" data-i18n="pi.level.press.mute">Mute / unmute</option>
+      <option value="up" data-i18n="pi.level.press.up">Turn up</option>
+      <option value="down" data-i18n="pi.level.press.down">Turn down</option>
     </select>
-    <label for="step" style="margin-top:12px">Step size</label>
+    <label for="step" style="margin-top:12px"
+      data-i18n="pi.level.step">Step size</label>
     <select id="step"></select>
   </div>
-  <p class="hint" id="hint">Rotate to adjust, press to mute.</p>
+  <p class="hint" id="hint" data-i18n="pi.level.hint">Rotate to adjust, press to mute.</p>
   <div style="margin-top:16px;border-top:1px solid #343a42;padding-top:14px">
-    <label for="theme">Colours <span style="font-weight:400;color:#8b929b">
-      — applies to every key</span></label>
+    <label for="theme"><span data-i18n="pi.colours">Colours</span>
+      <span style="font-weight:400;color:#8b929b"
+        data-i18n="pi.colours_scope">— applies to every key</span></label>
     <select id="theme"></select>
   </div>
   <p class="warn" id="warn" hidden></p>
@@ -61,7 +67,7 @@ OpenWave.onPayload((payload) => {
   if (!payload) return;
   if (payload.hint) {
     document.getElementById("hint").textContent =
-      "Rotate to adjust, press to mute. " + payload.hint;
+      OpenWave.t("pi.level.hint") + " " + payload.hint;
   }
   renderBehaviour(payload);
   renderTheme(payload);
@@ -122,7 +128,7 @@ function updateStepVisibility() {
 
 function fill(node, items, selected) {
   node.innerHTML = "";
-  node.appendChild(new Option("Choose…", ""));
+  node.appendChild(new Option(OpenWave.t("pi.choose"), ""));
   let group = null;
   let parent = node;
   for (const item of items) {
@@ -144,8 +150,7 @@ function renderPair(payload) {
   const pair = payload.pair;
   warn.hidden = true;
   if (!payload.openwave) {
-    warn.textContent = "OpenWave is not running, and this action needs it: "
-      + "a source's level inside one mix is OpenWave's own state.";
+    warn.textContent = OpenWave.t("pi.level.needs_openwave_send");
     warn.hidden = false;
   }
   // "cell:<source>:<mix>"
@@ -159,7 +164,7 @@ function renderPair(payload) {
     // Saved only once both halves are chosen; half a target names nothing,
     // and writing one would blank a key that already had a working pair.
     if (!source || !mix) {
-      warn.textContent = "Choose a source and a mix.";
+      warn.textContent = OpenWave.t("pi.level.choose_pair");
       warn.hidden = false;
       return;
     }
@@ -175,7 +180,7 @@ function renderPair(payload) {
 function fillStackSelect(id, chosen) {
   const node = document.getElementById(id);
   node.innerHTML = "";
-  node.appendChild(new Option("None", ""));
+  node.appendChild(new Option(OpenWave.t("pi.none"), ""));
   for (const target of targets) {
     const option = new Option(target.label, target.value);
     if (target.value === chosen) option.selected = true;
@@ -196,15 +201,14 @@ function render(payload) {
   warn.hidden = true;
 
   if (targets.length === 0) {
-    select.innerHTML = '<option value="">Nothing to control</option>';
-    warn.textContent = payload.openwave
-      ? "OpenWave has nothing of this kind configured yet."
-      : "OpenWave is not running, and this action needs it.";
+    OpenWave.only(select, OpenWave.t("pi.level.nothing"));
+    warn.textContent = OpenWave.t(payload.openwave
+      ? "pi.level.nothing_configured" : "pi.level.needs_openwave");
     warn.hidden = false;
     return;
   }
 
-  const placeholder = new Option("Choose what to control…", "");
+  const placeholder = new Option(OpenWave.t("pi.level.choose_target"), "");
   select.appendChild(placeholder);
 
   // Grouped so the three kinds are told apart at a glance: a mix and a
@@ -219,7 +223,9 @@ function render(payload) {
     optgroup.label = name;
     for (const target of members) {
       const option = new Option(
-        target.label + (target.isDefault ? "  (system output)" : ""),
+        target.isDefault
+          ? OpenWave.t("pi.level.system_output", { name: target.label })
+          : target.label,
         target.value,
       );
       if (target.value === chosen) option.selected = true;
@@ -232,8 +238,7 @@ function render(payload) {
     + `visible=${!!select.offsetParent}`);
 
   if (!payload.openwave) {
-    warn.textContent = "OpenWave is not running, so only mixes can be "
-      + "listed. Start it to choose a source or a send.";
+    warn.textContent = OpenWave.t("pi.level.only_mixes");
     warn.hidden = false;
   } else {
     showDefaultWarning(chosen);
@@ -246,8 +251,7 @@ function showDefaultWarning(chosen) {
   // letting someone discover it by muting everything.
   const target = targets.find((t) => t.value === chosen);
   if (target && target.isDefault) {
-    warn.textContent = "This mix is the system output. Muting it silences "
-      + "everything, not just OpenWave.";
+    warn.textContent = OpenWave.t("pi.level.system_output_warning");
     warn.hidden = false;
   } else {
     warn.hidden = true;

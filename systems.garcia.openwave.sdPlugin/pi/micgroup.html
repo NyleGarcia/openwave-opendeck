@@ -8,17 +8,18 @@
 <script src="_shared.js"></script>
 </head>
 <body>
-  <label for="group">Microphone group</label>
-  <select id="group"><option value="">Loading…</option></select>
-  <p class="hint">
+  <label for="group" data-i18n="pi.micgroup.label">Microphone group</label>
+  <select id="group"><option value="" data-i18n="pi.loading">Loading…</option></select>
+  <p class="hint" data-i18n="pi.micgroup.hint">
     Press the key to hand the group over to its next microphone. Only one
     microphone in a group is live at a time; microphones in other groups are
     left alone.
   </p>
   <p class="warn" id="warn" hidden></p>
   <div style="margin-top:16px;border-top:1px solid #343a42;padding-top:14px">
-    <label for="theme">Colours <span style="font-weight:400;color:#8b929b">
-      — applies to every key</span></label>
+    <label for="theme"><span data-i18n="pi.colours">Colours</span>
+      <span style="font-weight:400;color:#8b929b"
+        data-i18n="pi.colours_scope">— applies to every key</span></label>
     <select id="theme"></select>
   </div>
 
@@ -48,20 +49,19 @@ function render(payload) {
   if (!payload.openwave) {
     // Which microphone is live is OpenWave's state, not PipeWire's, so this
     // action needs it running rather than merely installed.
-    select.innerHTML = '<option value="">OpenWave is not running</option>';
-    warn.textContent = "Start OpenWave, then reopen this panel.";
+    OpenWave.only(select, OpenWave.t("pi.not_running"));
+    warn.textContent = OpenWave.t("pi.start_openwave");
     warn.hidden = false;
     return;
   }
   if (groups.length === 0) {
-    select.innerHTML = '<option value="">No groups yet</option>';
-    warn.textContent = "Group two microphones in OpenWave first: drag one row "
-      + "onto the middle of another.";
+    OpenWave.only(select, OpenWave.t("pi.micgroup.none"));
+    warn.textContent = OpenWave.t("pi.micgroup.how");
     warn.hidden = false;
     return;
   }
 
-  select.appendChild(new Option("Choose a group…", ""));
+  select.appendChild(new Option(OpenWave.t("pi.micgroup.choose"), ""));
   for (const name of groups) {
     const option = new Option(name, name);
     if (name === chosen) option.selected = true;
