@@ -8,6 +8,7 @@ whether a press reaches the right subsystem.
 
 import json
 import os
+import re
 import sys
 import unittest
 
@@ -109,6 +110,10 @@ class PluginCase(unittest.TestCase):
         self.plugin._levels = {}
         self.plugin._levels_at = 0.0
         self.plugin._theme = render.DEFAULT_THEME
+        self.plugin._actions = None
+        self.plugin._actions_at = 0.0
+        self.plugin._device_names = {}
+        self.plugin._device_names_at = 0.0
         render.set_theme(render.DEFAULT_THEME)
 
     def tearDown(self):
@@ -1062,6 +1067,168 @@ class TestFxToggle(PluginCase):
         self.assertEqual([m["value"] for m in payload["mics"]],
                          ["dock", "arctis"],
                          "app sources are not effect targets")
+
+
+SPEAKERS = "alsa_output.pci-speakers"
+HEADSET = "alsa_output.usb-headset"
+TV = "alsa_output.hdmi-tv"
+
+
+class TestOutputToggle(PluginCase):
+    """One key flips a mix between output devices and shows which is live."""
+
+    def setUp(self):
+        super().setUp()
+        self.snapshot["outputs"] = {"personal": SPEAKERS, "chat": "none"}
+        self.sinks[SPEAKERS] = [1.0, False]
+        self.sinks[HEADSET] = [1.0, False]
+        self.registered = ["snapshot", "set-output"]
+        self._patch(ipc, "actions", lambda: list(self.registered))
+        self._patch(ipc, "set_output", self._set_output)
+        self._patch(graph, "output_devices", lambda: [
+            (SPEAKERS, "Desk Speakers"), (HEADSET, "Arctis Headset")])
+
+    def _set_output(self, mix_id, choice):
+        self.calls.append(("output", mix_id, choice))
+        return True
+
+    def _place(self, *outputs, mix="personal"):
+        settings = {"mix": mix, "mix_label": "Personal Mix",
+                    "output_labels": {SPEAKERS: "Desk Speakers",
+                                      HEADSET: "Arctis Headset",
+                                      TV: "Living Room TV"}}
+        for i, name in enumerate(outputs or (SPEAKERS, HEADSET), 1):
+            settings[f"output{i}"] = name
+        self.place("c", P.OUTPUT_TOGGLE, settings)
+
+    def _drawn_svg(self):
+        """The key's visible text, lines joined: names wrap across <text>s."""
+        svg = self.plugin._drawn.get("c") or ""
+        return " ".join(re.findall(r">([^<>]+)</text>", svg))
+
+    def test_a_press_swaps_a_to_b_and_back(self):
+        self._place()
+        self.press("c")
+        self.assertEqual(self.calls[-1], ("output", "personal", HEADSET))
+        self.snapshot["outputs"]["personal"] = HEADSET
+        self.plugin._snapshot_at = 0.0
+        self.press("c")
+        self.assertEqual(self.calls[-1], ("output", "personal", SPEAKERS))
+
+    def test_the_key_shows_the_active_device(self):
+        self._place()
+        self.assertIn("Desk Speakers", self._drawn_svg())
+        self.press("c")
+        self.assertIn("Arctis Headset", self._drawn_svg(),
+                      "the switch shows before OpenWave's push arrives")
+
+    def test_three_devices_cycle_in_order(self):
+        self.sinks[TV] = [1.0, False]
+        self._place(SPEAKERS, HEADSET, TV)
+        self.snapshot["outputs"]["personal"] = HEADSET
+        self.press("c")
+        self.assertEqual(self.calls[-1], ("output", "personal", TV))
+
+    def test_an_unplugged_device_is_skipped(self):
+        del self.sinks[HEADSET]
+        self.sinks[TV] = [1.0, False]
+        self._place(SPEAKERS, HEADSET, TV)
+        self.press("c")
+        self.assertEqual(self.calls[-1], ("output", "personal", TV))
+
+    def test_nothing_to_switch_to_alerts_without_routing(self):
+        del self.sinks[HEADSET]
+        self._place()
+        self.press("c")
+        self.assertTrue(self.events("showAlert"))
+        self.assertEqual([c for c in self.calls if c[0] == "output"], [])
+
+    def test_an_unplugged_active_device_is_flagged(self):
+        """OpenWave leaves the mix silent rather than falling back."""
+        del self.sinks[SPEAKERS]
+        self._place()
+        svg = self._drawn_svg()
+        self.assertIn("Desk Speakers", svg, "named from the saved label")
+        self.assertIn("unplugged", svg)
+        self.press("c")
+        self.assertEqual(self.calls[-1], ("output", "personal", HEADSET),
+                         "a press still rescues it")
+
+    def test_an_output_outside_the_list_starts_from_the_top(self):
+        self.snapshot["outputs"]["personal"] = "auto"
+        self._place()
+        self.press("c")
+        self.assertEqual(self.calls[-1], ("output", "personal", SPEAKERS))
+
+    def test_an_older_openwave_greys_the_key_and_never_activates(self):
+        self.registered = ["snapshot"]
+        self._place()
+        self.assertIn("Update OpenWave", self._drawn_svg())
+        self.press("c")
+        self.assertTrue(self.events("showAlert"))
+        self.assertEqual([c for c in self.calls if c[0] == "output"], [])
+
+    def test_openwave_closed_greys_the_key(self):
+        self.snapshot = None
+        self._place()
+        self.assertIn("OpenWave closed", self._drawn_svg())
+        self.press("c")
+        self.assertTrue(self.events("showAlert"))
+
+    def test_state_is_reread_after_openwave_comes_back(self):
+        """Survives a reconnect: the key holds no state of its own."""
+        self._place()
+        self.snapshot["outputs"]["personal"] = HEADSET
+        self.plugin._on_push({"snapshot": json.dumps(self.snapshot)})
+        self.assertIn("Arctis Headset", self._drawn_svg())
+
+    def test_reconnect_rechecks_what_openwave_supports(self):
+        self.registered = ["snapshot"]
+        self._place()
+        self.assertIn("Update OpenWave", self._drawn_svg())
+        self.registered = ["snapshot", "set-output"]
+        self.plugin._snapshot = None                 # OpenWave went away
+        self.plugin._on_push({"snapshot": json.dumps(self.snapshot)})
+        self.assertIn("Desk Speakers", self._drawn_svg())
+
+    def test_an_unlabelled_device_takes_its_live_name(self):
+        """Chosen in OpenWave's window, so no key ever saved a name."""
+        self.snapshot["outputs"]["personal"] = HEADSET
+        self.place("c", P.OUTPUT_TOGGLE, {"mix": "personal",
+                                          "output1": SPEAKERS,
+                                          "output2": TV})
+        self.assertIn("Arctis Headset", self._drawn_svg())
+        self.assertNotIn("alsa_output", self._drawn_svg())
+
+    def test_unconfigured_needs_a_mix_and_two_outputs(self):
+        self.place("c", P.OUTPUT_TOGGLE, {"mix": "personal",
+                                          "output1": SPEAKERS})
+        self.assertIn("Pick a mix", self.plugin._drawn.get("c"))
+        self.press("c")
+        self.assertTrue(self.events("showAlert"))
+
+    def test_inspector_keeps_an_unplugged_choice_and_offers_auto(self):
+        payload = self.plugin._inspector_payload(P.OUTPUT_TOGGLE, {
+            "mix": "personal", "output1": SPEAKERS, "output2": TV,
+            "output_labels": {TV: "Living Room TV"}})
+        labels = {d["value"]: d["label"] for d in payload["devices"]}
+        self.assertEqual(labels["auto"], "System default")
+        self.assertEqual(labels[TV], "Living Room TV (unplugged)")
+        self.assertTrue(payload["supported"])
+        self.assertEqual([m["value"] for m in payload["mixes"]],
+                         ["personal", "chat"])
+
+
+class TestOutputChoices(unittest.TestCase):
+    def test_slots_are_read_in_order_skipping_gaps_and_repeats(self):
+        self.assertEqual(
+            P.output_choices({"output1": "a", "output2": "",
+                              "output3": "b", "output4": "a"}),
+            ["a", "b"])
+
+    def test_glyph_guesses_headphones_from_the_name(self):
+        self.assertEqual(P.device_glyph("Arctis Nova Pro"), "headphones")
+        self.assertEqual(P.device_glyph("Desk Speakers"), "speaker")
 
 
 class TestStackedDials(PluginCase):

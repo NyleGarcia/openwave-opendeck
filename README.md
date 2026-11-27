@@ -20,6 +20,7 @@ the distribution ships.
 | **Mic Group** | Which microphone in a group is live right now | Hands the group to its next microphone | ✓ | |
 | **Scene** | The scene's name | Recalls it; optionally, a hold saves the current state into it | ✓ | |
 | **Effect Toggle** | An LED for a microphone's low cut, gate, compressor or mono, with the threshold it applies | Flips that effect | ✓ | |
+| **Output Toggle** | Which device a mix is playing through, and its place in the list | Moves the mix to the next device — speakers ↔ headphones | ✓ | |
 
 Every key draws itself from live state. A mute pressed anywhere — the
 hardware button, OpenWave's window, another key — redraws the deck within
@@ -89,6 +90,29 @@ An **Effect Toggle** flips one effect on one microphone. The thresholds stay
 with OpenWave's own popover and calibrator; the key only shows what it will
 apply.
 
+### Output Toggle
+
+One key moves a mix between output devices: speakers and headphones, or up
+to four. The key shows the device the mix is playing through *now*, read
+from OpenWave rather than remembered, so a change made in the window, a
+restart or a reconnect all show correctly.
+
+A press goes to the next device in the list that is actually plugged in.
+Unplugged ones are skipped rather than chosen: OpenWave does not fall back
+for an explicit output, so routing to a missing device would silence the
+mix. If the *active* device is unplugged, the key turns the mute colour and
+says `unplugged` — the mix is silent until a press moves it somewhere real.
+
+Devices are stored by PipeWire `node.name`, which survives a replug, with
+the name they had when picked: once a device is unplugged PipeWire forgets
+its description, and `alsa_output.usb-…` is not something to put on a key.
+*System default* (OpenWave's `auto`) can be one of the slots.
+
+Needs an OpenWave that registers `set-output`
+([rikkichy/openwave#53](https://github.com/rikkichy/openwave/pull/53));
+against an older one the key greys out with `Update OpenWave` instead of
+pressing into nothing.
+
 Every list is read live, never hardcoded. Rename a mix, add a source, make a
 group or save a scene in OpenWave and the inspector shows it.
 
@@ -102,6 +126,7 @@ group or save a scene in OpenWave and the inspector shows it.
 | **Mic Group** | <img src=".github/keys/group-live.png" width="96" alt="Mic group, one mic live"> <img src=".github/keys/group-muted.png" width="96" alt="Mic group, all muted"> <img src=".github/keys/group-closed.png" width="96" alt="Mic group, OpenWave closed"> | a mic live · all muted · OpenWave closed |
 | **Scene** | <img src=".github/keys/scene-ready.png" width="96" alt="Scene ready"> <img src=".github/keys/scene-saved.png" width="96" alt="Scene just saved"> | ready · just saved by a hold |
 | **Effect Toggle** | <img src=".github/keys/fx-on.png" width="96" alt="Gate on at -42 dB"> <img src=".github/keys/fx-off.png" width="96" alt="Compressor off"> | on, with its threshold · off |
+| **Output Toggle** | <img src=".github/keys/output-speakers.png" width="96" alt="Personal Mix on desk speakers"> <img src=".github/keys/output-headphones.png" width="96" alt="Personal Mix on headphones"> <img src=".github/keys/output-unplugged.png" width="96" alt="Active output unplugged"> | speakers · headphones · active device unplugged |
 | **Dial strip** | <img src=".github/keys/strip-live.png" width="133" alt="Dial strip with live meter"> <img src=".github/keys/strip-send.png" width="133" alt="Dial strip for a send"> <img src=".github/keys/strip-muted.png" width="133" alt="Dial strip muted"> | mix with meter · send · muted |
 
 Six palettes ship — Default, Amber, Violet, Monochrome, High contrast and
@@ -173,6 +198,7 @@ gdbus call --session --dest com.github.openwave \
 | `switch-group`, `source-groups` | Mic Group |
 | `scenes`, `apply-scene`, `save-scene` | Scene |
 | `toggle-fx` | Effect Toggle |
+| `set-output` | Output Toggle (newer OpenWave only) |
 | `levels` | the live meter on a dial strip |
 
 `snapshot` is one action rather than one per field: a button has to draw all of
@@ -375,9 +401,9 @@ plugin with no manifest where one should be. It is built with Python's
 
 ## Status
 
-Volume, Mic Group, Scene and Effect Toggle work, on keys and — for the volume
-actions — on dials. Device gain and per-mix output selection need more actions
-on OpenWave's side first.
+Volume, Mic Group, Scene, Effect Toggle and Output Toggle work, on keys and —
+for the volume actions — on dials. Output Toggle needs an OpenWave with
+`set-output`. Device gain needs more actions on OpenWave's side first.
 
 ## License
 

@@ -434,3 +434,49 @@ def fx_key(source_name, effect, on, unavailable=False, value=""):
                       weight="400")
     )
     return _document(body, accent)
+
+
+def output_key(mix_name, device, position, count, kind="speaker",
+               missing=False, unavailable=False, note=""):
+    """A mix's output toggle: which device the mix is playing through now.
+
+    The device is the headline, for the same reason a group key leads with
+    its live microphone: the mix is what was chosen when the key was placed,
+    the device is what a press changes. `position` is the device's slot in
+    the key's list (1-based, 0 for one outside it), drawn as a row of dots so
+    A-or-B reads at a glance without reading a name. `missing` is a device
+    that is configured and active but unplugged -- the mix is silent, which
+    is worth drawing in the mute colour rather than as if all were well.
+    """
+    if unavailable:
+        return _document(
+            _glyph(kind, THEME["idle"], 50, 24, 1.75, muted=True)
+            + _text_block(_wrap(mix_name or "Output", 14), 104, 18,
+                          THEME["dim"])
+            + _text_block([note or "OpenWave closed"], 126, 13, THEME["dim"],
+                          weight="400"),
+            THEME["idle"])
+
+    accent = THEME["muted"] if missing else THEME["live"]
+    lines = _wrap(device or "No output", 12)
+    count = max(0, min(count, 6))
+    gap = 16
+    left = SIZE / 2 - (count - 1) * gap / 2
+    dots = "".join(
+        f'<circle cx="{left + i * gap:.1f}" cy="124" r="4.5" '
+        f'fill="{accent if i + 1 == position else "none"}" '
+        f'stroke="{accent if i + 1 == position else THEME["dim"]}" '
+        f'stroke-width="2"/>'
+        for i in range(count)
+    )
+    body = (
+        _glyph(kind, accent, 11, 10, 1.3, muted=missing)
+        + f'<text x="{SIZE - 13}" y="34" fill="{THEME["dim"]}" font-size="16" '
+        f'font-family="{FONT}" text-anchor="end">'
+        f'{_escape(_fit(mix_name, 9))}</text>'
+        + _text_block(lines, 86 if len(lines) > 1 else 90,
+                      23 if len(lines) == 1 else 20, THEME["text"])
+        + (_text_block([note], 124, 13, accent, weight="700") if note
+           else dots)
+    )
+    return _document(body, accent)
