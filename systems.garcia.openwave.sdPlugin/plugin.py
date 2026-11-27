@@ -297,8 +297,12 @@ class Plugin:
         call per redraw.
         """
         now = time.monotonic()
-        if node_name not in self._device_names and \
-                now - self._device_names_at >= ACTIONS_SECONDS:
+        # Never asked is its own case, not "asked at time zero": the clock
+        # counts from boot, so on a machine up for less than the cache's
+        # lifetime the subtraction alone would refuse the very first read.
+        if node_name not in self._device_names and (
+                self._device_names_at == 0.0
+                or now - self._device_names_at >= ACTIONS_SECONDS):
             self._device_names_at = now
             self._device_names = dict(graph.output_devices())
         return self._device_names.get(node_name)
