@@ -1200,6 +1200,17 @@ class TestOutputToggle(PluginCase):
         self.assertIn("Arctis Headset", self._drawn_svg())
         self.assertNotIn("alsa_output", self._drawn_svg())
 
+    def test_a_live_name_is_read_on_a_machine_that_has_just_booted(self):
+        """time.monotonic() counts from boot. Seconds after one it is
+        smaller than the cache's lifetime, which must not read as "asked
+        recently" before anything has been asked at all."""
+        self._patch(P.time, "monotonic", lambda: 5.0)
+        self.snapshot["outputs"]["personal"] = HEADSET
+        self.place("c", P.OUTPUT_TOGGLE, {"mix": "personal",
+                                          "output1": SPEAKERS,
+                                          "output2": TV})
+        self.assertIn("Arctis Headset", self._drawn_svg())
+
     def test_unconfigured_needs_a_mix_and_two_outputs(self):
         self.place("c", P.OUTPUT_TOGGLE, {"mix": "personal",
                                           "output1": SPEAKERS})
