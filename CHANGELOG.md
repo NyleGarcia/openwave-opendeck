@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/NyleGarcia/openwave-opendeck/compare/v1.1.0...v1.2.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* read an output device's live name on a machine that has just booted ([ab3470e](https://github.com/NyleGarcia/openwave-opendeck/commit/ab3470ed3ba75580a1f13c09c7faa3b4ff05eb42))
+
+
+### Features
+
+* localization, with English and French ([8807ac4](https://github.com/NyleGarcia/openwave-opendeck/commit/8807ac4df3a295165c2986b895d14e54079479bf)), closes [#3](https://github.com/NyleGarcia/openwave-opendeck/issues/3)
+
 # [1.1.0](https://github.com/NyleGarcia/openwave-opendeck/compare/v1.0.1...v1.1.0) (2026-11-27)
 
 
