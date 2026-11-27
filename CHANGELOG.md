@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/NyleGarcia/openwave-opendeck/compare/v1.0.1...v1.1.0) (2026-11-27)
+
+
+### Features
+
+* Output Toggle — switch a mix between output devices ([605aa67](https://github.com/NyleGarcia/openwave-opendeck/commit/605aa674a82c630c281139c0279db6056d666d4e)), closes [rikkichy/openwave#53](https://github.com/rikkichy/openwave/issues/53) [#3](https://github.com/NyleGarcia/openwave-opendeck/issues/3)
+
 ## [1.0.1](https://github.com/NyleGarcia/openwave-opendeck/compare/v1.0.0...v1.0.1) (2026-11-17)
 
 
