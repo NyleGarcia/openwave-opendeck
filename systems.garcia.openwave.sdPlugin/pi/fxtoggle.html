@@ -8,24 +8,26 @@
 <script src="_shared.js"></script>
 </head>
 <body>
-  <label for="mic">Microphone</label>
-  <select id="mic"><option value="">Loading…</option></select>
-  <label for="effect" style="margin-top:10px">Effect</label>
+  <label for="mic" data-i18n="pi.fx.mic">Microphone</label>
+  <select id="mic"><option value="" data-i18n="pi.loading">Loading…</option></select>
+  <label for="effect" style="margin-top:10px"
+    data-i18n="pi.fx.effect">Effect</label>
   <select id="effect">
-    <option value="lowcut">Low cut (off ↔ 80 Hz)</option>
-    <option value="gate">Gate</option>
-    <option value="comp">Compressor</option>
-    <option value="mono">Mono</option>
+    <option value="lowcut" data-i18n="pi.fx.lowcut">Low cut (off ↔ 80 Hz)</option>
+    <option value="gate" data-i18n="pi.fx.gate">Gate</option>
+    <option value="comp" data-i18n="pi.fx.comp">Compressor</option>
+    <option value="mono" data-i18n="pi.fx.mono">Mono</option>
   </select>
-  <p class="hint">
+  <p class="hint" data-i18n="pi.fx.hint">
     Press the key to flip the effect in that microphone's DSP chain. The
     LED shows whether it is currently in the chain; thresholds are set in
     OpenWave (the FX popover, or Auto-calibrate).
   </p>
   <p class="warn" id="warn" hidden></p>
   <div style="margin-top:16px;border-top:1px solid #343a42;padding-top:14px">
-    <label for="theme">Colours <span style="font-weight:400;color:#8b929b">
-      — applies to every key</span></label>
+    <label for="theme"><span data-i18n="pi.colours">Colours</span>
+      <span style="font-weight:400;color:#8b929b"
+        data-i18n="pi.colours_scope">— applies to every key</span></label>
     <select id="theme"></select>
   </div>
 
@@ -55,12 +57,12 @@ function render(payload) {
   warn.hidden = true;
 
   if (!payload.openwave) {
-    mic.innerHTML = '<option value="">OpenWave is not running</option>';
-    warn.textContent = "Start OpenWave, then reopen this panel.";
+    OpenWave.only(mic, OpenWave.t("pi.not_running"));
+    warn.textContent = OpenWave.t("pi.start_openwave");
     warn.hidden = false;
     return;
   }
-  mic.appendChild(new Option("Choose a microphone…", ""));
+  mic.appendChild(new Option(OpenWave.t("pi.fx.choose"), ""));
   for (const m of mics) {
     const option = new Option(m.label, m.value);
     if (m.value === chosen) option.selected = true;

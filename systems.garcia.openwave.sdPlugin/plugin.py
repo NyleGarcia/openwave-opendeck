@@ -25,7 +25,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from owdeck import graph, ipc, owstate, render   # noqa: E402
+from owdeck import graph, i18n, ipc, owstate, render   # noqa: E402
+from owdeck.i18n import t                        # noqa: E402
 from owdeck.ws import WebSocket                  # noqa: E402
 
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plugin.log")
@@ -50,9 +51,11 @@ OUTPUT_TOGGLE = "systems.garcia.openwave.outputtoggle"
 MAX_OUTPUTS = 4
 OUTPUT_SLOTS = tuple(f"output{i}" for i in range(1, MAX_OUTPUTS + 1))
 # OpenWave's two non-device choices. "auto" follows the system default sink,
-# so it is always "present"; "none" is a mix routed nowhere.
+# so it is always "present"; "none" is a mix routed nowhere. Each is named by
+# the string key.output.<choice>, looked up when drawn rather than here: the
+# language is not known until OpenDeck has started the plugin.
 AUTO_OUTPUT, NO_OUTPUT = "auto", "none"
-SPECIAL_OUTPUTS = {AUTO_OUTPUT: "System default", NO_OUTPUT: "Off"}
+SPECIAL_OUTPUTS = (AUTO_OUTPUT, NO_OUTPUT)
 # How long the list of OpenWave's registered actions is trusted. Long, since
 # it only changes when OpenWave is upgraded and restarted; a restart also
 # shows as the snapshot going away and coming back, which drops it early.
@@ -70,21 +73,18 @@ VOLUME_KINDS = {
     SOURCE_LEVEL: ("src",),
     SEND_LEVEL: ("cell",),
 }
+# The words themselves are in lang/<code>.json; these are the keys, as
+# (headline, hint) for a key with nothing chosen yet and the inspector's
+# explanation of each action.
 PROMPTS = {
-    VOLUME: ("Pick a mix", "in settings"),
-    SOURCE_LEVEL: ("Pick a source", "in settings"),
-    SEND_LEVEL: ("Pick a source", "and a mix"),
+    VOLUME: ("key.pick.mix", "key.in_settings"),
+    SOURCE_LEVEL: ("key.pick.source", "key.in_settings"),
+    SEND_LEVEL: ("key.pick.source", "key.pick.and_mix"),
 }
 HINTS = {
-    VOLUME: "A mix's master. It moves everything routed into the mix and "
-            "everything capturing from it at once, and works whether "
-            "OpenWave is running or not.",
-    SOURCE_LEVEL: "A source's trim, applied ahead of the per-mix faders, so "
-                  "it moves that source in every mix at once. Needs OpenWave "
-                  "running.",
-    SEND_LEVEL: "One source's level inside a single mix. Every other mix is "
-                "left alone, which is what separates this from Source "
-                "Volume. Needs OpenWave running.",
+    VOLUME: "pi.level.hint.mix",
+    SOURCE_LEVEL: "pi.level.hint.source",
+    SEND_LEVEL: "pi.level.hint.send",
 }
 
 # How far one detent, or one press of a stepping key, moves a level. Small
@@ -184,7 +184,7 @@ def output_label(settings, choice, live_labels=None):
     moment it goes, and "alsa_output.usb-…" is not something to put on a key.
     """
     if choice in SPECIAL_OUTPUTS:
-        return SPECIAL_OUTPUTS[choice]
+        return t(f"key.output.{choice}")
     labels = settings.get("output_labels")
     if isinstance(labels, dict) and labels.get(choice):
         return labels[choice]
@@ -197,6 +197,22 @@ def device_glyph(label):
     lowered = (label or "").lower()
     return ("headphones" if any(w in lowered for w in _HEADPHONE_WORDS)
             else "speaker")
+
+
+def opendeck_language(info):
+    """The language OpenDeck is set to, from the -info it starts plugins with.
+
+    Falls back to the session's locale when OpenDeck did not say: an older
+    OpenDeck, or a plugin started by hand.
+    """
+    try:
+        language = (json.loads(info or "{}").get("application")
+                    or {}).get("language")
+    except (ValueError, AttributeError):
+        language = None
+    if not isinstance(language, str):
+        language = None
+    return language or os.environ.get("LC_ALL") or os.environ.get("LANG")
 
 
 def split_cell(ident):
@@ -342,8 +358,9 @@ class Plugin:
             mix = next((m for m in data.get("mixes") or []
                         if m.get("id") == mix_id), None)
             if cell is None or source is None or mix is None:
-                return {"name": "Missing", "percent": 0, "muted": False,
-                        "glyph": "speaker", "ok": False, "context": ""}
+                return {"name": t("key.missing"), "percent": 0,
+                        "muted": False, "glyph": "speaker", "ok": False,
+                        "context": ""}
             return {
                 "name": source.get("name", source_id),
                 "percent": round(float(cell["volume"]) * 100),
@@ -365,7 +382,7 @@ class Plugin:
                 "ok": True,
                 "context": "",
             }
-        return {"name": "Missing", "percent": 0, "muted": False,
+        return {"name": t("key.missing"), "percent": 0, "muted": False,
                 "glyph": "speaker", "ok": False, "context": ""}
 
     def _group_state(self, group):
@@ -441,7 +458,8 @@ class Plugin:
         encoder = settings.get("controller") == "Encoder"
         state = self._read(settings)
         if state is None:
-            headline, hint = PROMPTS.get(action, PROMPTS[VOLUME])
+            headline, hint = (t(key) for key in
+                              PROMPTS.get(action, PROMPTS[VOLUME]))
             self._paint(context, render.unconfigured_key(
                 headline, hint,
                 kind="mic" if action == SOURCE_LEVEL else "speaker"))
@@ -470,7 +488,7 @@ class Plugin:
         label = settings.get("scene_label") or ""
         if not settings.get("scene"):
             self._paint(context, render.unconfigured_key(
-                "Pick a scene", "in settings", kind="speaker"))
+                t("key.pick.scene"), t("key.in_settings"), kind="speaker"))
             return
         self._paint(context, render.scene_key(
             label or settings.get("scene"),
@@ -505,7 +523,7 @@ class Plugin:
         effect = settings.get("effect")
         if not source_id or not effect:
             self._paint(context, render.unconfigured_key(
-                "Pick a mic + effect", "in settings", kind="mic"))
+                t("key.pick.fx"), t("key.in_settings"), kind="mic"))
             return
         data = self._openwave()
         source = next((s for s in (data or {}).get("sources") or []
@@ -553,14 +571,16 @@ class Plugin:
         data = self._openwave()
         mix_name = settings.get("mix_label") or mix_id
         if data is None:
-            return {"mix": mix_name, "ok": False, "note": "OpenWave closed"}
+            return {"mix": mix_name, "ok": False, "note": t("key.closed")}
         mix = next((m for m in data.get("mixes") or []
                     if m.get("id") == mix_id), None)
         if mix is None:
-            return {"mix": mix_name, "ok": False, "note": "Mix removed"}
+            return {"mix": mix_name, "ok": False,
+                    "note": t("key.output.mix_removed")}
         mix_name = mix.get("name", mix_name)
         if not self._supports("set-output"):
-            return {"mix": mix_name, "ok": False, "note": "Update OpenWave"}
+            return {"mix": mix_name, "ok": False,
+                    "note": t("key.output.update")}
         current = (data.get("outputs") or {}).get(mix_id) or NO_OUTPUT
         live = self._sink_states()
         label = output_label(settings, current)
@@ -578,7 +598,7 @@ class Plugin:
             "missing": missing,
             # A device unplugged while active leaves the mix silent: OpenWave
             # does not fall back for an explicit choice. Say so.
-            "note": "unplugged" if missing else "",
+            "note": t("key.output.unplugged") if missing else "",
             "kind": device_glyph(label),
         }
 
@@ -586,7 +606,8 @@ class Plugin:
         state = self._output_state(settings)
         if state is None:
             self._paint(context, render.unconfigured_key(
-                "Pick a mix", "and two outputs", kind="headphones"))
+                t("key.pick.mix"), t("key.pick.two_outputs"),
+                kind="headphones"))
             return
         if not state["ok"]:
             self._paint(context, render.output_key(
@@ -659,7 +680,7 @@ class Plugin:
         group = settings.get("group")
         if not group:
             self._paint(context, render.unconfigured_key(
-                "Pick a group", "in settings", kind="mic"))
+                t("key.pick.group"), t("key.in_settings"), kind="mic"))
             return
         state = self._group_state(group)
         if state is None:
@@ -796,10 +817,13 @@ class Plugin:
             # silently clears a slot.
             for choice in output_choices(settings):
                 if choice not in known and choice not in SPECIAL_OUTPUTS:
+                    name = output_label(settings, choice)
+                    # The bare name travels with the marked one: the panel
+                    # saves a device's name next to it, and must not save
+                    # "(unplugged)" -- in whatever language -- as part of it.
                     devices.append({
-                        "value": choice,
-                        "label": output_label(settings, choice)
-                        + " (unplugged)"})
+                        "value": choice, "name": name,
+                        "label": t("pi.output.unplugged", name=name)})
             return {
                 "openwave": data is not None,
                 "supported": data is not None and self._supports("set-output"),
@@ -807,7 +831,7 @@ class Plugin:
                            "label": m.get("name", m.get("id"))}
                           for m in (data or {}).get("mixes") or []],
                 "devices": [{"value": AUTO_OUTPUT,
-                             "label": SPECIAL_OUTPUTS[AUTO_OUTPUT]}]
+                             "label": t(f"key.output.{AUTO_OUTPUT}")}]
                 + devices,
                 "slots": MAX_OUTPUTS,
                 "themes": render.theme_choices(),
@@ -833,7 +857,7 @@ class Plugin:
                 {
                     "value": f"mix:{mix_id}",
                     "label": label,
-                    "group": "Mixes",
+                    "group": t("pi.level.group.mixes"),
                     # The monitoring mix is normally the system default sink,
                     # so its master is the machine's volume. The inspector
                     # says so rather than letting someone find out by muting
@@ -847,8 +871,9 @@ class Plugin:
                 targets.append({
                     "value": f"src:{source.get('id')}",
                     "label": source.get("name", source.get("id", "")),
-                    "group": ("Microphones" if source.get("kind") == "device"
-                              else "Sources"),
+                    "group": (t("pi.level.group.microphones")
+                              if source.get("kind") == "device"
+                              else t("pi.level.group.sources")),
                     "isDefault": False,
                 })
         if "cell" in kinds:
@@ -866,15 +891,15 @@ class Plugin:
                     "sources": [
                         {"id": source.get("id"),
                          "label": source.get("name", source.get("id")),
-                         "group": ("Microphones"
+                         "group": (t("pi.level.group.microphones")
                                    if source.get("kind") == "device"
-                                   else "Sources")}
+                                   else t("pi.level.group.sources"))}
                         for source in (data or {}).get("sources") or []
                     ],
                     "chosen": chosen,
                 },
                 "openwave": data is not None,
-                "hint": HINTS.get(action, ""),
+                "hint": t(HINTS[action]) if action in HINTS else "",
                 "press": press_action(settings or {}),
                 "step": step_percent(settings or {}),
                 "themes": render.theme_choices(),
@@ -885,12 +910,13 @@ class Plugin:
             state = self._read(settings or {})
             label = (state or {}).get("name") or chosen
             if (state or {}).get("context"):
-                label = f"{label} into {state['context']}"
+                label = t("pi.level.into", name=label, mix=state["context"])
             targets.insert(0, {"value": chosen, "label": label,
-                               "group": "Currently set", "isDefault": False})
+                               "group": t("pi.level.group.current"),
+                               "isDefault": False})
 
         return {"targets": targets, "openwave": data is not None,
-                "hint": HINTS.get(action, ""),
+                "hint": t(HINTS[action]) if action in HINTS else "",
                 # The plugin holds the authoritative settings for this
                 # instance, so it says what is chosen rather than leaving the
                 # panel to work it out from its own copy. Pair mode already
@@ -901,6 +927,19 @@ class Plugin:
                 "step": step_percent(settings or {}),
                 "themes": render.theme_choices(),
                 "theme": self._theme}
+
+    def _send_inspector(self, context, action, settings):
+        """Answer an inspector: its lists, and the words to show them in.
+
+        The strings ride along with every payload rather than being asked
+        for separately: an inspector is a page loaded from disk that cannot
+        read lang/ itself, and a second round trip would be a second reply
+        to miss while its webview is still loading.
+        """
+        payload = self._inspector_payload(action, settings)
+        payload["language"] = i18n.language()
+        payload["strings"] = i18n.table("pi.")
+        self._send("sendToPropertyInspector", context, payload)
 
     # ------------------------------------------------------------- inbound
     def _handle(self, message):
@@ -969,10 +1008,10 @@ class Plugin:
             # it unprompted makes the lists correct at the only moment they
             # are being read.
             settings = self._contexts.get(context) or {}
-            self._send("sendToPropertyInspector", context,
-                       self._inspector_payload(
-                           message.get("action")
-                           or settings.get("action") or VOLUME, settings))
+            self._send_inspector(
+                context,
+                message.get("action") or settings.get("action") or VOLUME,
+                settings)
         elif event == "sendToPlugin":
             if payload.get("debug"):
                 log.info("PI[%s] %s", context, payload["debug"])
@@ -983,9 +1022,8 @@ class Plugin:
                       or message.get("action")
                       or (self._contexts.get(context) or {}).get("action")
                       or VOLUME)
-            self._send("sendToPropertyInspector", context,
-                       self._inspector_payload(
-                           action, self._contexts.get(context) or {}))
+            self._send_inspector(context, action,
+                                 self._contexts.get(context) or {})
 
     # ---------------------------------------------------------------- loop
     def _on_push(self, states):
@@ -1082,6 +1120,8 @@ def main():
     if not port or not uuid:
         log.error("missing -port/-pluginUUID; got %s", argv)
         return 1
+    log.info("language: %s", i18n.set_language(
+        opendeck_language(args.get("info"))))
     try:
         Plugin(int(port), uuid, register_event).run()
     except Exception:                              # noqa: BLE001

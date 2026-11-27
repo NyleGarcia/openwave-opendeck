@@ -8,18 +8,19 @@
 <script src="_shared.js"></script>
 </head>
 <body>
-  <label for="mix">Mix</label>
-  <select id="mix"><option value="">Loading…</option></select>
+  <label for="mix" data-i18n="pi.output.mix">Mix</label>
+  <select id="mix"><option value="" data-i18n="pi.loading">Loading…</option></select>
   <div id="slots" style="margin-top:10px"></div>
-  <p class="hint">
+  <p class="hint" data-i18n="pi.output.hint">
     Each press moves the mix to the next output in the list, skipping any
     device that is unplugged. The key shows the live one. Two is the usual
     pair; the extra slots are optional.
   </p>
   <p class="warn" id="warn" hidden></p>
   <div style="margin-top:16px;border-top:1px solid #343a42;padding-top:14px">
-    <label for="theme">Colours <span style="font-weight:400;color:#8b929b">
-      — applies to every key</span></label>
+    <label for="theme"><span data-i18n="pi.colours">Colours</span>
+      <span style="font-weight:400;color:#8b929b"
+        data-i18n="pi.colours_scope">— applies to every key</span></label>
     <select id="theme"></select>
   </div>
 
@@ -55,18 +56,17 @@ function render(payload) {
 
   mix.innerHTML = "";
   if (!payload.openwave) {
-    mix.appendChild(new Option("OpenWave is not running", ""));
-    say("Start OpenWave, then reopen this panel.");
+    mix.appendChild(new Option(OpenWave.t("pi.not_running"), ""));
+    say(OpenWave.t("pi.start_openwave"));
   } else {
-    mix.appendChild(new Option("Choose a mix…", ""));
+    mix.appendChild(new Option(OpenWave.t("pi.output.choose_mix"), ""));
     for (const m of mixes) {
       const option = new Option(m.label, m.value);
       if (m.value === settings.mix) option.selected = true;
       mix.appendChild(option);
     }
     if (!payload.supported) {
-      say("This OpenWave can't switch outputs remotely yet. Update it; " +
-          "the key works as soon as it can.");
+      say(OpenWave.t("pi.output.unsupported"));
     }
   }
 
@@ -77,12 +77,18 @@ function render(payload) {
     const label = document.createElement("label");
     label.htmlFor = key;
     label.style.marginTop = i ? "8px" : "0";
-    label.textContent = "Output " + NAMES[i] + (i >= 2 ? " (optional)" : "");
+    label.textContent = OpenWave.t(
+      i >= 2 ? "pi.output.slot_optional" : "pi.output.slot",
+      { letter: NAMES[i] });
     const select = document.createElement("select");
     select.id = key;
-    select.appendChild(new Option(i >= 2 ? "None" : "Choose a device…", ""));
+    select.appendChild(new Option(OpenWave.t(
+      i >= 2 ? "pi.none" : "pi.output.choose_device"), ""));
     for (const d of devices) {
       const option = new Option(d.label, d.value);
+      // An unplugged device is listed as "Name (unplugged)", in whatever
+      // language; the plugin sends its bare name alongside for saving.
+      option.dataset.name = d.name || d.label;
       if (d.value === settings[key]) option.selected = true;
       select.appendChild(option);
     }
@@ -91,8 +97,8 @@ function render(payload) {
       // the description and only the node name is left.
       const labels = Object.assign({}, OpenWave.settings().output_labels);
       if (select.value) {
-        labels[select.value] = select.options[select.selectedIndex].text
-          .replace(/ \(unplugged\)$/, "");
+        labels[select.value] =
+          select.options[select.selectedIndex].dataset.name;
       }
       OpenWave.save({ [key]: select.value, output_labels: labels });
     };

@@ -24,13 +24,15 @@ preview:
 
 # Copied rather than symlinked: OpenDeck resolves a plugin's property
 # inspectors and layouts relative to the real directory, and refuses paths
-# that canonicalise outside it.
+# that canonicalise outside it. The translations are copied a second time,
+# up next to manifest.json, which is the only place OpenDeck reads them from.
 install:
 	rm -rf $(PLUGINS_DIR)/$(PLUGIN)
 	mkdir -p $(PLUGINS_DIR)
 	cp -r $(PLUGIN) $(PLUGINS_DIR)/$(PLUGIN)
 	find $(PLUGINS_DIR)/$(PLUGIN) -name __pycache__ -type d -exec rm -rf {} +
 	rm -f $(PLUGINS_DIR)/$(PLUGIN)/plugin.log
+	cp $(PLUGIN)/lang/*.json $(PLUGINS_DIR)/$(PLUGIN)/
 	@echo "installed; restart OpenDeck"
 
 clean:

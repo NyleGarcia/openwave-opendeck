@@ -17,7 +17,43 @@
   let controller = "Keypad";
   let settings = {};
   let answered = false;
+  let strings = {};
   const listeners = [];
+
+  // The words come from the plugin, in OpenDeck's language, with every
+  // payload: an inspector is a page loaded from disk and cannot read lang/
+  // itself. Until the first one arrives the English written in the page
+  // stands in, and a key no language has shows as itself rather than blank.
+  //
+  // Placeholders are bare {name}s filled in one pass, so a value that
+  // happens to contain braces -- a device called "{mix}" -- is not expanded
+  // again. Translated text only ever reaches the page as text (textContent,
+  // new Option), never as markup: a language file is data, and must not be
+  // able to put an element on the page.
+  const own = (object, name) =>
+    Object.prototype.hasOwnProperty.call(object, name);
+
+  function t(key, values) {
+    const text = own(strings, key) && typeof strings[key] === "string"
+      ? strings[key] : key;
+    if (!values) return text;
+    return text.replace(/\{(\w+)\}/g, (whole, name) =>
+      own(values, name) ? String(values[name]) : whole);
+  }
+
+  function translate(payload) {
+    if (!payload || !payload.strings || typeof payload.strings !== "object") {
+      return;
+    }
+    strings = payload.strings;
+    if (typeof payload.language === "string") {
+      document.documentElement.lang = payload.language.replace("_", "-");
+    }
+    for (const node of document.querySelectorAll("[data-i18n]")) {
+      const key = node.dataset.i18n;
+      if (own(strings, key)) node.textContent = t(key);
+    }
+  }
 
   function start(port, _uuid, registerEvent, _info, actionInfo) {
     const info = typeof actionInfo === "string"
@@ -46,6 +82,7 @@
         answered = true;
         report("payload " + JSON.stringify(message.payload || {}).length + "b");
         try {
+          translate(message.payload);
           listeners.forEach((fn) => fn(message.payload || {}));
         } catch (err) {
           report("render threw: " + err);
@@ -79,6 +116,15 @@
 
   window.OpenWave = {
     report,
+    // The string for `key` in OpenDeck's language, {placeholders} filled
+    // from `values`. For text a page builds in script; text that is simply
+    // in the page carries a data-i18n attribute instead and is filled above.
+    t,
+    // Replace a dropdown's contents with one unselectable line of text.
+    only(select, text) {
+      select.innerHTML = "";
+      select.appendChild(new Option(text, ""));
+    },
     controller: () => controller,
     settings: () => settings,
     onPayload(fn) { listeners.push(fn); },

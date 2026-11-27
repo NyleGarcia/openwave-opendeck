@@ -8,20 +8,22 @@
 <script src="_shared.js"></script>
 </head>
 <body>
-  <label for="scene">Scene</label>
-  <select id="scene"><option value="">Loading…</option></select>
-  <p class="hint">
+  <label for="scene" data-i18n="pi.scene.label">Scene</label>
+  <select id="scene"><option value="" data-i18n="pi.loading">Loading…</option></select>
+  <p class="hint" data-i18n="pi.scene.hint">
     Press the key to recall the scene — every trim, send, mute, output,
     master and device setting it holds.
   </p>
   <label style="display:flex;gap:8px;align-items:center;margin-top:10px">
     <input type="checkbox" id="hold" />
-    Hold the key (~1s) to save the current state into this scene
+    <span data-i18n="pi.scene.hold">Hold the key (~1s) to save the current
+      state into this scene</span>
   </label>
   <p class="warn" id="warn" hidden></p>
   <div style="margin-top:16px;border-top:1px solid #343a42;padding-top:14px">
-    <label for="theme">Colours <span style="font-weight:400;color:#8b929b">
-      — applies to every key</span></label>
+    <label for="theme"><span data-i18n="pi.colours">Colours</span>
+      <span style="font-weight:400;color:#8b929b"
+        data-i18n="pi.colours_scope">— applies to every key</span></label>
     <select id="theme"></select>
   </div>
 
@@ -51,20 +53,19 @@ function render(payload) {
   warn.hidden = true;
 
   if (!payload.openwave) {
-    select.innerHTML = '<option value="">OpenWave is not running</option>';
-    warn.textContent = "Start OpenWave, then reopen this panel.";
+    OpenWave.only(select, OpenWave.t("pi.not_running"));
+    warn.textContent = OpenWave.t("pi.start_openwave");
     warn.hidden = false;
     return;
   }
   if (scenes.length === 0) {
-    select.innerHTML = '<option value="">No scenes yet</option>';
-    warn.textContent = "Save a scene in OpenWave first: the camera menu in "
-      + "the header bar, “Save current as…”.";
+    OpenWave.only(select, OpenWave.t("pi.scene.none"));
+    warn.textContent = OpenWave.t("pi.scene.how");
     warn.hidden = false;
     return;
   }
 
-  select.appendChild(new Option("Choose a scene…", ""));
+  select.appendChild(new Option(OpenWave.t("pi.scene.choose"), ""));
   for (const scene of scenes) {
     const option = new Option(scene.label, scene.value);
     if (scene.value === chosen) option.selected = true;

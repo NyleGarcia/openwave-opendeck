@@ -1,0 +1,146 @@
+{
+  "Name": "OpenWave",
+  "Description": "Contrôlez les mix d’OpenWave depuis un Stream Deck.",
+  "systems.garcia.openwave.mixlevel": {
+    "Name": "Volume du mix",
+    "Tooltip": "Volume général d’un mix OpenWave. Appuyez pour couper le son."
+  },
+  "systems.garcia.openwave.sourcelevel": {
+    "Name": "Volume de la source",
+    "Tooltip": "Gain d’un micro ou d’une source, dans tous les mix à la fois. Appuyez pour couper le son."
+  },
+  "systems.garcia.openwave.sendlevel": {
+    "Name": "Niveau de source par mix",
+    "Tooltip": "Niveau d’une source dans un seul mix, sans toucher aux autres. Appuyez pour couper le son."
+  },
+  "systems.garcia.openwave.micgroup": {
+    "Name": "Groupe de micros",
+    "Tooltip": "Passe un groupe de micros à son micro suivant."
+  },
+  "systems.garcia.openwave.scene": {
+    "Name": "Scène",
+    "Tooltip": "Rappelle une scène OpenWave ; en option, un appui long y enregistre l’état actuel."
+  },
+  "systems.garcia.openwave.fxtoggle": {
+    "Name": "Effet marche/arrêt",
+    "Tooltip": "Active ou désactive le coupe-bas, le gate, le compresseur ou le mono d’un micro, avec un voyant pour son état."
+  },
+  "systems.garcia.openwave.outputtoggle": {
+    "Name": "Bascule de sortie",
+    "Tooltip": "Bascule un mix entre plusieurs sorties, par exemple enceintes et casque. Affiche celle qui est active."
+  },
+  "Localization": {
+    "key.muted": "MUET",
+    "key.closed": "OpenWave fermé",
+    "key.missing": "Introuvable",
+    "key.in_settings": "dans les réglages",
+
+    "key.pick.mix": "Choix du mix",
+    "key.pick.source": "Choix source",
+    "key.pick.and_mix": "et d’un mix",
+    "key.pick.group": "Choix groupe",
+    "key.pick.scene": "Choix scène",
+    "key.pick.fx": "Micro + effet",
+    "key.pick.two_outputs": "et de deux sorties",
+
+    "key.group.all_muted": "tous muets",
+    "key.group.mics": "{count} micros",
+
+    "key.scene.corner": "SCÈNE",
+    "key.scene.title": "Scène",
+    "key.scene.recall": "appui : rappeler",
+    "key.scene.saved": "enregistrée ✓",
+
+    "key.fx.lowcut": "COUPE-BAS",
+    "key.fx.gate": "GATE",
+    "key.fx.comp": "COMP",
+    "key.fx.mono": "MONO",
+
+    "key.output.title": "Sortie",
+    "key.output.nothing": "Aucune sortie",
+    "key.output.auto": "Défaut système",
+    "key.output.none": "Désactivée",
+    "key.output.unplugged": "débranché",
+    "key.output.mix_removed": "Mix supprimé",
+    "key.output.update": "MàJ OpenWave",
+
+    "strip.muted": "MUET",
+    "strip.into": "dans {mix}",
+
+    "theme.default": "Par défaut",
+    "theme.amber": "Ambre",
+    "theme.violet": "Violet",
+    "theme.mono": "Monochrome",
+    "theme.contrast": "Contraste élevé",
+    "theme.light": "Clair",
+
+    "pi.loading": "Chargement…",
+    "pi.choose": "Choisir…",
+    "pi.none": "Aucun",
+    "pi.colours": "Couleurs",
+    "pi.colours_scope": "— s’applique à toutes les touches",
+    "pi.not_running": "OpenWave n’est pas lancé",
+    "pi.start_openwave": "Lancez OpenWave, puis rouvrez ce panneau.",
+
+    "pi.level.control": "Contrôler",
+    "pi.level.stack": "Empiler d’autres cibles (touchez la bande pour passer de l’une à l’autre)",
+    "pi.level.also": "Contrôler aussi",
+    "pi.level.and": "Et",
+    "pi.level.source": "Source",
+    "pi.level.in_mix": "Dans quel mix",
+    "pi.level.press": "À l’appui",
+    "pi.level.press.mute": "Couper / rétablir le son",
+    "pi.level.press.up": "Monter le volume",
+    "pi.level.press.down": "Baisser le volume",
+    "pi.level.step": "Taille du pas",
+    "pi.level.hint": "Tournez pour régler, appuyez pour couper le son.",
+    "pi.level.hint.mix": "Le volume général d’un mix. Il agit à la fois sur tout ce qui est routé vers le mix et sur tout ce qui l’enregistre, qu’OpenWave soit lancé ou non.",
+    "pi.level.hint.source": "Le gain d’une source, appliqué avant les faders de chaque mix : il agit donc sur cette source dans tous les mix à la fois. OpenWave doit être lancé.",
+    "pi.level.hint.send": "Le niveau d’une source dans un seul mix. Les autres mix ne sont pas touchés, c’est ce qui distingue cette action de Volume de la source. OpenWave doit être lancé.",
+    "pi.level.choose_target": "Choisir quoi contrôler…",
+    "pi.level.choose_pair": "Choisissez une source et un mix.",
+    "pi.level.nothing": "Rien à contrôler",
+    "pi.level.nothing_configured": "OpenWave n’a encore rien de ce type de configuré.",
+    "pi.level.needs_openwave": "OpenWave n’est pas lancé, et cette action en a besoin.",
+    "pi.level.needs_openwave_send": "OpenWave n’est pas lancé, et cette action en a besoin : le niveau d’une source dans un mix est un état propre à OpenWave.",
+    "pi.level.only_mixes": "OpenWave n’est pas lancé, seuls les mix peuvent donc être listés. Lancez-le pour choisir une source ou un envoi.",
+    "pi.level.system_output": "{name}  (sortie système)",
+    "pi.level.system_output_warning": "Ce mix est la sortie du système. Le couper rend tout muet, pas seulement OpenWave.",
+    "pi.level.into": "{name} dans {mix}",
+    "pi.level.group.mixes": "Mix",
+    "pi.level.group.microphones": "Micros",
+    "pi.level.group.sources": "Sources",
+    "pi.level.group.current": "Réglage actuel",
+
+    "pi.micgroup.label": "Groupe de micros",
+    "pi.micgroup.hint": "Appuyez sur la touche pour passer le groupe à son micro suivant. Un seul micro d’un groupe est actif à la fois ; les micros des autres groupes ne sont pas touchés.",
+    "pi.micgroup.choose": "Choisir un groupe…",
+    "pi.micgroup.none": "Aucun groupe pour l’instant",
+    "pi.micgroup.how": "Groupez d’abord deux micros dans OpenWave : faites glisser une ligne sur le milieu d’une autre.",
+
+    "pi.scene.label": "Scène",
+    "pi.scene.hint": "Appuyez sur la touche pour rappeler la scène — tous les gains, envois, coupures, sorties, volumes généraux et réglages de périphérique qu’elle contient.",
+    "pi.scene.hold": "Maintenir la touche (~1 s) pour enregistrer l’état actuel dans cette scène",
+    "pi.scene.choose": "Choisir une scène…",
+    "pi.scene.none": "Aucune scène pour l’instant",
+    "pi.scene.how": "Enregistrez d’abord une scène dans OpenWave : le menu caméra de la barre d’en-tête, « Save current as… ».",
+
+    "pi.fx.mic": "Micro",
+    "pi.fx.effect": "Effet",
+    "pi.fx.lowcut": "Coupe-bas (désactivé ↔ 80 Hz)",
+    "pi.fx.gate": "Gate",
+    "pi.fx.comp": "Compresseur",
+    "pi.fx.mono": "Mono",
+    "pi.fx.hint": "Appuyez sur la touche pour activer ou désactiver l’effet dans la chaîne DSP de ce micro. Le voyant indique s’il est dans la chaîne ; les seuils se règlent dans OpenWave (la fenêtre FX, ou Auto-calibrate).",
+    "pi.fx.choose": "Choisir un micro…",
+
+    "pi.output.mix": "Mix",
+    "pi.output.hint": "Chaque appui envoie le mix vers la sortie suivante de la liste, en sautant tout périphérique débranché. La touche affiche celle qui est active. Deux sorties, c’est le cas habituel ; les emplacements suivants sont facultatifs.",
+    "pi.output.choose_mix": "Choisir un mix…",
+    "pi.output.choose_device": "Choisir un périphérique…",
+    "pi.output.slot": "Sortie {letter}",
+    "pi.output.slot_optional": "Sortie {letter} (facultative)",
+    "pi.output.unplugged": "{name} (débranché)",
+    "pi.output.unsupported": "Cette version d’OpenWave ne sait pas encore changer de sortie à distance. Mettez-la à jour ; la touche fonctionnera dès qu’elle le pourra."
+  }
+}
